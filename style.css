@@ -616,9 +616,6 @@ body::before{
 body.calm .storm-fx{opacity:0}
 
 /* ---- Shop + task kinds ---------------------------------------------------------------- */
-.task-kind{display:inline-block;margin-right:8px;padding:2px 8px;border-radius:99px;font-size:9px;letter-spacing:.6px;text-transform:uppercase;font-weight:900;vertical-align:middle;white-space:nowrap}
-.task-kind.stream{background:rgba(143,211,255,.18);color:#bfe6ff;border:1px solid rgba(143,211,255,.45)}
-.task-kind.manual{background:rgba(215,255,58,.12);color:#e8ffa0;border:1px solid rgba(215,255,58,.4)}
 .shop-panel{padding:22px}
 @media(max-width:620px){.shop-panel{padding:14px}}
 .shop-top{display:flex;gap:18px;align-items:center;justify-content:space-between;flex-wrap:wrap;margin-bottom:16px}

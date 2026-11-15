@@ -117,8 +117,8 @@ export const GIFTS = {
   ]
 };
 
-// OLD sample quests (no longer used). Tasks now live in the `task_pool` table: edit them in
-// Supabase → Table Editor → task_pool (streaming + non_streaming, see README).
+// OLD sample quests (no longer used). Tasks now live in the `song_tasks` and `other_tasks` tables: edit them in
+// Supabase → Table Editor (see README).
 export const TASKS_BY_DICE = {
   1: ["Listen to one TXT song mindfully", "Write down one lyric that made you smile", "Take a 10-minute break"],
   2: ["Listen to two TXT songs", "Drink a glass of water", "Write one thing you're grateful for"],
@@ -245,7 +245,7 @@ export const CHIBI_ITEMS = [
 
 // ==========================================================================
 // MP (moasta points) EXTRAS.  Keep equal to the SQL (grant_progress_unlocks).
-//  * Every completed task = TASK_MP (50), streaming AND non-streaming.
+//  * Every completed task = TASK_MP (50), whichever table it came from.
 //  * Every checkpoint you reach (once): +CHECKPOINT_MP.
 //  * Finishing a board (once): +BOARD_FINISH_MP[tile].
 // Your SPENDABLE balance = mp (earned) - mp_spent. The leaderboard ranks by mp EARNED, so buying

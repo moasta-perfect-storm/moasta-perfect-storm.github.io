@@ -1102,13 +1102,9 @@ function renderTaskHistory() {
 
       // Plain tasks (and admin test accounts) can be ticked by tapping the counter.
       const tappable = !isAuto || player?.isAdmin;
-      // Two kinds of task: STREAMING ticks itself (Last.fm / stats.fm), NON-STREAMING is checked / unchecked by hand.
-      const kindChip = isAuto
-        ? `<span class="task-kind stream" title="Ticks itself when your streams show up on Last.fm / stats.fm">🎧 Streaming</span>`
-        : `<span class="task-kind manual" title="Tick it yourself when you have done it">✅ Non-streaming</span>`;
       const counter = isAuto ? `${progress}/${target}` : (done ? "☑ Done" : "☐ To do");
       row.innerHTML = `
-        <span class="task-text">${kindChip}${escapeHtml(task)}</span>
+        <span class="task-text">${escapeHtml(task)}</span>
         ${tappable
           ? `<button type="button" class="task-count" title="Tap to ${done ? "un-check" : "check"}">${counter}</button>`
           : `<span class="task-count">${counter}</span>`}
