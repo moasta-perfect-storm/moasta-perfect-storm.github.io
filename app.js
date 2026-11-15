@@ -1338,12 +1338,12 @@ function convertPlayer(data) {
 async function loadLeaderboard() {
   const columns = "id, username, avatar, position, highest_milestone, mp";
 
-  // public_players = players WITHOUT admin accounts (created by supabase-game-functions.sql).
-  let { data, error } = await supabase.from("public_players").select(columns);
+  // get_leaderboard() = players WITHOUT admin accounts (created by supabase-game-functions.sql).
+  let { data, error } = await supabase.rpc("get_leaderboard");
 
   if (error) {
     // The SQL hasn't been re-run yet: fall back to the plain table so the game still works.
-    console.warn("public_players view missing, using profiles:", error.message);
+    console.warn("get_leaderboard() missing, using profiles:", error.message);
     ({ data, error } = await supabase.from("profiles").select(columns));
   }
 
@@ -1742,8 +1742,8 @@ $("authForm").addEventListener("submit", async event => {
     }
 
     if (authMode === "signup") {
-      if (username.toLowerCase() === "admin") {
-        throw new Error("The username “admin” is reserved. Please choose another.");
+      if (username.toLowerCase().includes("admin")) {
+        throw new Error("Usernames can’t contain the word “admin”. Please choose another.");
       }
 
       // Friendly pre-check (the server enforces uniqueness either way).
@@ -1779,7 +1779,7 @@ $("authForm").addEventListener("submit", async event => {
     $("authMessage").textContent =
       /already registered|already been registered|already exists/i.test(text) ? "That username is already taken. Please choose another."
       : /invalid login credentials/i.test(text) ? "Wrong username or password."
-      : /reserved/i.test(text) ? "The username “admin” is reserved. Please choose another."
+      : /reserved|contain the word/i.test(text) ? "Usernames can’t contain the word “admin”. Please choose another."
       : /database error saving new user/i.test(text) ? "That username can’t be used. Please choose another."
       : text;
   } finally {

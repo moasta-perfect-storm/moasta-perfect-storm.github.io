@@ -110,12 +110,12 @@ The server refuses admin actions for everyone not listed in `admin_users`.
 
 - Players sign up with a **username + password only** (no email). The username is turned into a hidden address `username@players.perfectstorm.game` (`AUTH_EMAIL_DOMAIN` in `game-config.js` and the SQL).
 - Usernames: 3–18 letters, numbers or `_`, **unique ignoring upper/lower case**.
-- The name **`admin`** is reserved for accounts in `admin_users`. Nobody else can sign up with it (blocked on the form, in `save_profile`, and by a trigger on `auth.users`).
+- No username may contain the word **`admin`** (any capitalisation). It is blocked on the sign-up form, in `save_profile` and by a trigger on `auth.users`. Admin rights come from the `admin_users` table (see `supabase-make-admin.sql`), not from the name.
 - There is no password reset by email any more. If someone forgets their password, set a new one in Supabase → Authentication → Users.
 
 ## Leaderboard
 
-- Ranked by moasta points, then checkpoint, then tile. **Admin accounts are not listed** (the list is read from the `public_players` view, and admins also don't appear as tokens on other players' boards).
+- Ranked by moasta points, then checkpoint, then tile. **Admin accounts are not listed** (the list comes from the `get_leaderboard()` function, and admins also don't appear as tokens on other players' boards).
 - The box on the right shows **streams collected on this website** (every play the checker counted, all players together) and the total for each song of the album set in `ALBUM_TRACKS` in `game-config.js`. A play is only counted once, and admin test plays are left out. Counting starts when you install this update.
 - When the album's song names change, edit `ALBUM_NAME` / `ALBUM_TRACKS`.
 
