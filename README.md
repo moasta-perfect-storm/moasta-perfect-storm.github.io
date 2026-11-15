@@ -65,12 +65,12 @@ To add or change items: `CHIBI_ITEMS` in `game-config.js`, the `chibi_items` ins
 
 ## Rules (enforced on the server in `roll_daily()`)
 
-- **3 rolls per KST day**, each with its own dice and **2 tasks** (the first 2 tasks of that dice number in `task_templates`). Every task only counts songs played after the roll that gave it. The dice is rolled on the server.
+- **3 rolls per KST day**, each with its own dice and **2 tasks**: one **streaming** and one **non-streaming** task from `task_pool` (see *Task types* below). A streaming task only counts songs played after the roll that gave it. The dice (movement) is rolled on the server.
 - You stop on the last tile of the board you are on (100 / 200 / 300); the next roll starts the next board.
 - Storm portals can't push you below your highest unlocked checkpoint (boards 1 and 2 only; board 3 has none).
 - Gifts: random forward / backward / dud / **roll one more time**, once per player per gift tile, and they never trigger another event.
   A bonus roll only moves you; today's tasklist stays the same.
-- **MP (moasta points)**: every completed task gives 50 MP (a task can set its own `"mp"`). MP is shown on the leaderboard.
+- **MP (moasta points)**: every completed task gives 50 MP (streaming and non-streaming; a `task_pool` row can set its own `mp`). **Checkpoints give +10 MP** each (25, 50, 75, 125, 150, 175) and **finishing a board gives +25 / +50 / +75 MP** (tile 100 / 200 / 300). Each bonus is paid once, also to players who already passed them when you install this update. The leaderboard ranks by MP *earned*; MP spent in the Shop does not lower your rank.
 - Leaderboard: MP, then highest checkpoint, then tile (up to 300).
 
 ## Listening tasks (Last.fm) – one-time setup
@@ -91,7 +91,7 @@ Only songs played **after the player's roll** count. Two kinds of task:
 Players: Tasklists page → *Connect Last.fm*. They need their streaming app connected to Last.fm, and "Hide recent listening information" must be off in their Last.fm privacy settings.
 
 - **Change what counts**: edit the lists at the top of `index.ts` (group names, member names).
-- **Change the tasks**: edit `task_templates` in Table Editor (formats are explained in `supabase-listening-tasks.sql`).
+- **Change the tasks**: edit `task_pool` in Table Editor (see *Task types*).
 - Listening tasks can't be ticked by hand (the server refuses); admin test accounts can.
 - The checker looks at the last 3 days of rolls, so a tasklist can still finish after midnight.
 - The Tasklists page shows the last 20 songs that counted (stored in `listening_history`).
@@ -131,10 +131,39 @@ The cards let the daily background show through. Adjust `--panel`, `--overlay-a`
 
 The game, welcome, login and character screens are scaled to about 65% (one variable, `--app-zoom` near the bottom of `style.css`) so board and cards fit one laptop screen. Set it to `1` for no scaling.
 
+## Task types (streaming / non-streaming)
+
+Every task lives in the `task_pool` table (Supabase → Table Editor). Columns: `kind`, `sort_order`, `text`, `song`, `count`, `distinct_songs`, `mp`, `active`.
+
+| | Streaming | Non-streaming |
+|---|---|---|
+| `kind` | `streaming` | `non_streaming` |
+| Completed by | ticks itself from the player's **Last.fm or stats.fm** plays (`song` = exact title, empty = any TXT song; `count` = plays needed) | the player **checks / unchecks** it on the Tasklists page |
+| MP | 50 | 50 |
+| Picked | the **next row** by `sort_order`, top to bottom, no skips, then back to the top (the pointer is `profiles.stream_cursor`) | random (never one the player already has today) |
+
+Each roll gives **1 streaming + 1 non-streaming** task, so the two kinds stay balanced.
+The streaming rows are seeded with the PERFECT STORM album, top to bottom (“Stream … 3 times”). The non-streaming rows are a starter list (MOA Station, Stationhead, Shazam, YouTube Music, LinC app FP for Inkigayo, …): **change the wording to whatever your fans actually do**. Don't put quote marks around a title in a non-streaming task.
+Add a new task = add a row (set `sort_order` to place a streaming task in the album order). Retire one with `active = false`.
+Un-checking a task is blocked if the MP it gave was already spent in the Shop.
+
+## Shop (spend MP on chibi items)
+
+The **Shop** tab sells 23 items: hairstyles, outfits, accessories, auras and wings, all drawn in `avatarDataUri()` in `app.js`. Players see a preview on their own chibi before buying, then tap **Wear**. Bought items also appear in the Wardrobe. Items you earn at checkpoints / boards stay free drops.
+
+Balance = MP earned − MP spent (`profiles.mp` − `profiles.mp_spent`). Buying runs on the server (`buy_chibi_item`), so nobody can buy without the points or buy twice.
+
+**Prices** (common 100–250, rare 400–750, epic 900–1400, legendary 1800; whole shop = 14,500 MP). A player can earn at most 300 MP a day (3 rolls × 2 tasks × 50), so on day 1 they can afford 1–2 cheap items at most, and even a perfect player needs about 7 weeks for everything. To make the shop faster / slower, change `price` in `game-config.js` **and** in the `chibi_items` insert in `supabase-game-functions.sql`, then re-run it.
+To add an item: a line in `CHIBI_ITEMS` (`kind: "shop"`, `price`), the same row in the SQL, and a drawing in `app.js` (`SHOP_HAIR`, `SHOP_OUTFITS`, `SHOP_ACCESSORIES`, `SHOP_WINGS` or the aura map, keyed by the item name).
+
+## Editing on GitHub
+
+You can change files directly on github.com (open the file → pencil icon → *Commit changes*) and GitHub Pages republishes in about a minute. You do **not** need VS Code for that. Use VS Code when you change many files at once, or want to test locally first. The SQL file is never used by GitHub: after changing it, paste it into Supabase → SQL Editor and run it.
+
 ## Changing things
 
 - **Board / gifts / milestones**: edit `game-config.js` (what players SEE) **and** the matching constants at the top of `roll_daily()` in `supabase-game-functions.sql` (what the server DOES), then re-run the SQL. Keep the loop rules above.
-- **Daily tasks**: Supabase → Table Editor → `task_templates` (one row per dice number, a JSON list of task texts). Re-running the SQL never overwrites your edits.
+- **Tasks**: Supabase → Table Editor → `task_pool` (see *Task types*). Re-running the SQL never overwrites your edits. (`task_templates` and `supabase-listening-tasks.sql` are the OLD per-dice task lists and are no longer used.)
 - **Backgrounds**: `assets/backgrounds/background-1…7.jpg`, one per KST day from `SEASON_START_DATE`, cycling.
 - **Chibi options**: `CHIBI_OPTIONS` / `CHIBI_PALETTES` in `app.js`.
 
@@ -148,6 +177,10 @@ delete from public.daily_rolls where player_id = 'YOUR-USER-UUID'
 More reset snippets are at the bottom of the SQL file.
 
 ## Changelog (this version)
+- Two task types (streaming / non-streaming) from the new `task_pool` table, 1 of each per roll.
+- +10 MP per checkpoint, +25 / +50 / +75 MP for finishing boards 1 / 2 / 3.
+- Shop tab with 23 buyable chibi items (`buy_chibi_item`); balance = MP earned − MP spent.
+- **Update steps**: re-run `supabase-game-functions.sql` once, upload the site files again (check-listening needs no change).
 
 - **Three boards** (tiles 1–300) with their own storms, ladders, gifts and checkpoints; board 3 has no checkpoints. Board tabs on the Game page, a START pad for players waiting between boards.
 - **Chibi unlocks**: 6 common checkpoint drops, plus a rare / epic / legendary item for finishing each board, a Wardrobe tab, locked items show how to earn them.

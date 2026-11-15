@@ -117,8 +117,8 @@ export const GIFTS = {
   ]
 };
 
-// Sample quests. These are seeded into the `task_templates` table by the SQL file;
-// after that you can edit them directly in Supabase → Table Editor → task_templates.
+// OLD sample quests (no longer used). Tasks now live in the `task_pool` table: edit them in
+// Supabase → Table Editor → task_pool (streaming + non_streaming, see README).
 export const TASKS_BY_DICE = {
   1: ["Listen to one TXT song mindfully", "Write down one lyric that made you smile", "Take a 10-minute break"],
   2: ["Listen to two TXT songs", "Drink a glass of water", "Write one thing you're grateful for"],
@@ -164,7 +164,7 @@ export const BOARDS = [
   { name: "Ride the Storm", sub: "Tiles 101–200",
     milestones: [25, 50, 75],
     storms: {"20": 1, "29": 12, "40": 21, "49": 32, "60": 41, "68": 53, "86": 75, "89": 72},
-    ladders: {"8": 13, "27": 34, "39": 42, "63": 78, "69": 72, "88": 93},
+    ladders: {"8": 13, "30": 31, "39": 42, "63": 78, "69": 72, "88": 93},
     gifts: {
     3: [{"type": "forward", "amount": 4, "message": "A sparkling gift! Move forward 4 tiles."}, {"type": "backward", "amount": 5, "message": "Oops! A gust pushes you back 5 tiles."}, {"type": "backward", "amount": 8, "message": "Oops! A gust pushes you back 8 tiles."}, {"type": "dud", "amount": 0, "message": "A mysterious box… it was empty!"}, {"type": "reroll", "amount": 0, "message": "Bonus roll! Roll the dice one more time."}],
     19: [{"type": "forward", "amount": 6, "message": "A lucky star! Move forward 6 tiles."}, {"type": "backward", "amount": 4, "message": "The storm caught you. Move back 4 tiles!"}, {"type": "backward", "amount": 6, "message": "Oops! A gust pushes you back 6 tiles."}, {"type": "dud", "amount": 0, "message": "Just confetti. No movement!"}, {"type": "reroll", "amount": 0, "message": "Bonus roll! Roll the dice one more time."}],
@@ -180,7 +180,7 @@ export const BOARDS = [
   { name: "Eye of the Storm", sub: "Tiles 201–300 · no checkpoints",
     milestones: [],
     storms: {"16": 5, "19": 2, "36": 25, "39": 22, "54": 47, "57": 44, "60": 41, "74": 67, "77": 64, "80": 61, "95": 86, "99": 82},
-    ladders: {"17": 24, "34": 47, "44": 56, "76": 85},
+    ladders: {"17": 24, "20": 21, "34": 47, "76": 85},
     gifts: {
     11: [{"type": "forward", "amount": 3, "message": "A lucky star! Move forward 3 tiles."}, {"type": "backward", "amount": 9, "message": "A tricky surprise. Move back 9 tiles."}, {"type": "backward", "amount": 7, "message": "The storm caught you. Move back 7 tiles!"}, {"type": "backward", "amount": 8, "message": "The storm caught you. Move back 8 tiles!"}, {"type": "dud", "amount": 0, "message": "A mysterious box… it was empty!"}, {"type": "reroll", "amount": 0, "message": "A golden ticket! Roll the dice one more time."}],
     29: [{"type": "forward", "amount": 5, "message": "A sparkling gift! Move forward 5 tiles."}, {"type": "backward", "amount": 7, "message": "The storm caught you. Move back 7 tiles!"}, {"type": "backward", "amount": 8, "message": "The storm caught you. Move back 8 tiles!"}, {"type": "backward", "amount": 5, "message": "The storm caught you. Move back 5 tiles!"}, {"type": "dud", "amount": 0, "message": "Just confetti. No movement!"}, {"type": "reroll", "amount": 0, "message": "Bonus roll! Roll the dice one more time."}],
@@ -214,5 +214,42 @@ export const CHIBI_ITEMS = [
   { id: "cp-175",  slot: "accessory", name: "Neon halo",      rarity: "common",    how: "Reach checkpoint 175 (board 2)" },
   { id: "board-1", slot: "outfit",    name: "Storm cloak",    rarity: "rare",      how: "Finish board 1 (tile 100)" },
   { id: "board-2", slot: "aura",      name: "Lightning aura", rarity: "epic",      how: "Finish board 2 (tile 200)" },
-  { id: "board-3", slot: "wings",     name: "Storm wings",    rarity: "legendary", how: "Finish board 3 (tile 300)" }
+  { id: "board-3", slot: "wings",     name: "Storm wings",    rarity: "legendary", how: "Finish board 3 (tile 300)" },
+
+  // ---- SHOP ITEMS: bought with moasta points (MP). Same ids / names / prices as supabase-game-functions.sql ----
+  { id: "hair-bun", slot: "style", name: "Messy bun", rarity: "common", kind: "shop", price: 150, how: "Shop · 150 MP" },
+  { id: "hair-spacebuns", slot: "style", name: "Space buns", rarity: "common", kind: "shop", price: 200, how: "Shop · 200 MP" },
+  { id: "hair-braid", slot: "style", name: "Long braid", rarity: "common", kind: "shop", price: 250, how: "Shop · 250 MP" },
+  { id: "hair-wolf", slot: "style", name: "Wolf cut", rarity: "rare", kind: "shop", price: 450, how: "Shop · 450 MP" },
+  { id: "hair-windswept", slot: "style", name: "Windswept", rarity: "rare", kind: "shop", price: 600, how: "Shop · 600 MP" },
+  { id: "fit-denim", slot: "outfit", name: "Denim jacket", rarity: "common", kind: "shop", price: 200, how: "Shop · 200 MP" },
+  { id: "fit-pjs", slot: "outfit", name: "Starry pajamas", rarity: "common", kind: "shop", price: 250, how: "Shop · 250 MP" },
+  { id: "fit-stage", slot: "outfit", name: "Stage jacket", rarity: "rare", kind: "shop", price: 600, how: "Shop · 600 MP" },
+  { id: "fit-windbreaker", slot: "outfit", name: "Neon windbreaker", rarity: "rare", kind: "shop", price: 700, how: "Shop · 700 MP" },
+  { id: "fit-cloud", slot: "outfit", name: "Cloud dress", rarity: "epic", kind: "shop", price: 1100, how: "Shop · 1100 MP" },
+  { id: "acc-glasses", slot: "accessory", name: "Round glasses", rarity: "common", kind: "shop", price: 100, how: "Shop · 100 MP" },
+  { id: "acc-sunnies", slot: "accessory", name: "Sunglasses", rarity: "common", kind: "shop", price: 150, how: "Shop · 150 MP" },
+  { id: "acc-cat", slot: "accessory", name: "Cat ears", rarity: "common", kind: "shop", price: 200, how: "Shop · 200 MP" },
+  { id: "acc-scarf", slot: "accessory", name: "Fuzzy scarf", rarity: "common", kind: "shop", price: 250, how: "Shop · 250 MP" },
+  { id: "acc-pearls", slot: "accessory", name: "Pearl headband", rarity: "rare", kind: "shop", price: 400, how: "Shop · 400 MP" },
+  { id: "acc-crown", slot: "accessory", name: "Gold crown", rarity: "rare", kind: "shop", price: 750, how: "Shop · 750 MP" },
+  { id: "acc-tiara", slot: "accessory", name: "Crystal tiara", rarity: "epic", kind: "shop", price: 1200, how: "Shop · 1200 MP" },
+  { id: "aura-sparkle", slot: "aura", name: "Sparkle aura", rarity: "rare", kind: "shop", price: 650, how: "Shop · 650 MP" },
+  { id: "aura-rain", slot: "aura", name: "Rain shimmer", rarity: "epic", kind: "shop", price: 900, how: "Shop · 900 MP" },
+  { id: "aura-rainbow", slot: "aura", name: "Rainbow storm", rarity: "epic", kind: "shop", price: 1400, how: "Shop · 1400 MP" },
+  { id: "wings-cloud", slot: "wings", name: "Cloud wings", rarity: "rare", kind: "shop", price: 900, how: "Shop · 900 MP" },
+  { id: "wings-butterfly", slot: "wings", name: "Butterfly wings", rarity: "epic", kind: "shop", price: 1300, how: "Shop · 1300 MP" },
+  { id: "wings-rainbow", slot: "wings", name: "Rainbow wings", rarity: "legendary", kind: "shop", price: 1800, how: "Shop · 1800 MP" }
 ];
+
+
+// ==========================================================================
+// MP (moasta points) EXTRAS.  Keep equal to the SQL (grant_progress_unlocks).
+//  * Every completed task = TASK_MP (50), streaming AND non-streaming.
+//  * Every checkpoint you reach (once): +CHECKPOINT_MP.
+//  * Finishing a board (once): +BOARD_FINISH_MP[tile].
+// Your SPENDABLE balance = mp (earned) - mp_spent. The leaderboard ranks by mp EARNED, so buying
+// things never drops you down the ranking.
+// ==========================================================================
+export const CHECKPOINT_MP = 10;
+export const BOARD_FINISH_MP = { 100: 25, 200: 50, 300: 75 };

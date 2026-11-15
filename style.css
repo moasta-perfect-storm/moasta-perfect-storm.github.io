@@ -531,7 +531,7 @@ body::before{
    STORMY SITE: drifting clouds, rain and occasional lightning behind everything.
    Turn it all off by adding  .storm-fx{display:none}  or set --storm-rain:0 below.
    ========================================================================== */
-:root{--storm-rain:.10}
+:root{--storm-rain:.35}
 .storm-fx{position:fixed;inset:0;z-index:-1;pointer-events:none;overflow:hidden}
 .storm-fx .clouds{position:absolute;inset:-20% -10% auto -10%;height:70%;
   background:
@@ -614,3 +614,23 @@ body::before{
 /* The finale: the storm stops and the sky clears */
 .storm-fx{transition:opacity 2.5s ease}
 body.calm .storm-fx{opacity:0}
+
+/* ---- Shop + task kinds ---------------------------------------------------------------- */
+.task-kind{display:inline-block;margin-right:8px;padding:2px 8px;border-radius:99px;font-size:9px;letter-spacing:.6px;text-transform:uppercase;font-weight:900;vertical-align:middle;white-space:nowrap}
+.task-kind.stream{background:rgba(143,211,255,.18);color:#bfe6ff;border:1px solid rgba(143,211,255,.45)}
+.task-kind.manual{background:rgba(215,255,58,.12);color:#e8ffa0;border:1px solid rgba(215,255,58,.4)}
+.shop-top{display:flex;gap:18px;align-items:center;justify-content:space-between;flex-wrap:wrap;margin-bottom:16px}
+.shop-balance{display:flex;flex-direction:column;gap:2px}
+.shop-balance strong{font-size:28px;color:var(--gold)}
+.shop-filters{display:flex;gap:8px;flex-wrap:wrap}
+.shop-filter{border:1px solid var(--line);background:rgba(255,255,255,.07);color:#fff;border-radius:99px;padding:8px 14px;font-size:12px;font-weight:800;cursor:pointer}
+.shop-filter.active{border-color:#ffd8ed;background:rgba(244,185,216,.3)}
+.shop-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:14px}
+.shop-item{padding:12px;border-radius:16px;background:rgba(255,255,255,.07);border:1px solid var(--line);display:flex;flex-direction:column;align-items:center;gap:7px;font-size:12px;text-align:center}
+.shop-item .reward-chibi{width:110px;height:110px}
+.shop-item.rarity-rare{border-color:#8fd3ff}.shop-item.rarity-epic{border-color:#d7a8ff}
+.shop-item.rarity-legendary{border-color:#d7ff3a;box-shadow:0 0 18px rgba(215,255,58,.35)}
+.shop-item.owned{opacity:.9}
+.shop-meta{display:flex;gap:6px;align-items:center;color:var(--muted);font-size:11px}
+.shop-buy{border:0;border-radius:999px;padding:9px 14px;font-size:12px;font-weight:900;cursor:pointer;background:linear-gradient(135deg,#f3b7d8,#b9a7ff);color:#241f45}
+.shop-buy:disabled{opacity:.45;cursor:not-allowed}

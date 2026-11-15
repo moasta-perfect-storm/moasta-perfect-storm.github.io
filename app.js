@@ -3,7 +3,8 @@ import { supabase } from "./supabase-config.js";
 import {
   BOARDS, BOARD_SIZE, BOARD_COUNT, TOTAL_TILES, BADGES, CHIBI_ITEMS,
   SEASON_START_DATE, BACKGROUND_COUNT,
-  AUTH_EMAIL_DOMAIN, TASK_MP, ROLLS_PER_DAY, ALBUM_NAME, ALBUM_TRACKS
+  AUTH_EMAIL_DOMAIN, TASK_MP, ROLLS_PER_DAY, ALBUM_NAME, ALBUM_TRACKS,
+  CHECKPOINT_MP, BOARD_FINISH_MP
 } from "./game-config.js";
 
 const $ = (id) => document.getElementById(id);
@@ -126,6 +127,7 @@ function showView(viewId) {
   // Opening the Tasklists page checks Last.fm for new TXT plays.
   if (viewId === "leaderboardView") loadStreamStats();
   if (viewId === "wardrobeView") renderWardrobe();
+  if (viewId === "shopView") renderShop();
 
   if (viewId === "tasksView") {
     loadSongHistory();
@@ -363,6 +365,7 @@ function updatePlayerUI() {
   $("statPosition").textContent = `${player.position ?? 1} / ${TOTAL_TILES}`;
   $("statBoard").textContent = `${placeOf(player).board + 1} / ${BOARD_COUNT}`;
   updateWardrobeBadge();
+  updateShopNav();
 
   $("statMilestone").textContent =
     player.highestMilestone > 1
@@ -400,6 +403,7 @@ function updatePlayerUI() {
   renderListeningPanel();
   renderTaskHistory();
   renderSongHistory();
+  if (!$("shopView").classList.contains("hidden")) renderShop();
 }
 
 const CHIBI_OPTIONS = {
@@ -438,7 +442,18 @@ function normaliseAvatarState(value, seed="perfect-storm-player") {
 function avatarDataUri(value, seed="perfect-storm-player", view="0 0 320 320") {
   const a = normaliseAvatarState(value, seed);
   const hairBack = a.style === "Twin tails" ? `<circle cx="92" cy="158" r="32" fill="${a.hair}"/><circle cx="228" cy="158" r="32" fill="${a.hair}"/>` : `<path d="M91 132 Q72 42 160 39 Q248 42 229 132 L220 177 L100 177Z" fill="${a.hair}"/>`;
+  const star4 = (x, y, r, fill) => `<path d="M${x} ${y - r} L${x + r * .3} ${y - r * .3} L${x + r} ${y} L${x + r * .3} ${y + r * .3} L${x} ${y + r} L${x - r * .3} ${y + r * .3} L${x - r} ${y} L${x - r * .3} ${y - r * .3}Z" fill="${fill}"/>`;
+  const mirror = (shape) => `${shape}<g transform="translate(320 0) scale(-1 1)">${shape}</g>`;
+  const hairCap = `<path d="M86 117 Q77 38 160 40 Q243 38 234 117 Q213 91 198 108 Q179 83 160 109 Q139 84 121 109 Q103 92 86 117Z" fill="${a.hair}"/>`;
+  const SHOP_HAIR = {
+    "Messy bun": `<circle cx="160" cy="30" r="27" fill="${a.hair}"/><path d="M142 20 Q160 6 178 22 M146 40 Q160 30 176 38" stroke="#FFFFFF" stroke-opacity=".3" stroke-width="3" fill="none" stroke-linecap="round"/>${hairCap}<path d="M144 54 Q160 64 176 54" stroke="#F4BFD7" stroke-width="6" fill="none" stroke-linecap="round"/>`,
+    "Space buns": `<circle cx="104" cy="52" r="25" fill="${a.hair}"/><circle cx="216" cy="52" r="25" fill="${a.hair}"/><circle cx="104" cy="52" r="25" fill="none" stroke="#FFFFFF" stroke-opacity=".25" stroke-width="3"/><circle cx="216" cy="52" r="25" fill="none" stroke="#FFFFFF" stroke-opacity=".25" stroke-width="3"/>${hairCap}<circle cx="116" cy="76" r="5" fill="#F4BFD7"/><circle cx="204" cy="76" r="5" fill="#F4BFD7"/>`,
+    "Long braid": `<path d="M88 118 Q79 42 160 43 Q241 42 232 118 Q205 91 185 96 Q150 111 88 118Z" fill="${a.hair}"/><g fill="${a.hair}" stroke="#302B40" stroke-opacity=".3" stroke-width="2"><ellipse cx="226" cy="150" rx="15" ry="19"/><ellipse cx="231" cy="178" rx="15" ry="19"/><ellipse cx="226" cy="206" rx="15" ry="19"/><ellipse cx="231" cy="234" rx="14" ry="18"/></g><path d="M222 252 Q231 266 240 252Z" fill="#F4BFD7"/><path d="M94 112 Q85 159 108 177 L121 139Z" fill="${a.hair}"/>`,
+    "Wolf cut": `<path d="M82 124 Q68 34 160 38 Q252 34 238 124 L252 160 L228 146 L236 190 L210 150 Q198 104 160 104 Q122 104 110 150 L84 190 L92 146 L68 160Z" fill="${a.hair}"/><path d="M96 108 Q125 80 160 98 Q195 80 224 108 Q190 94 160 114 Q130 94 96 108Z" fill="${a.hair}" stroke="#FFFFFF" stroke-opacity=".2" stroke-width="2"/>`,
+    "Windswept": `<path d="M86 117 Q77 38 160 40 Q243 38 234 117 Q200 90 150 108 Q114 116 86 117Z" fill="${a.hair}"/><path d="M90 108 Q40 112 22 160 Q60 146 98 142Z" fill="${a.hair}"/><path d="M92 96 Q50 78 30 100 Q64 96 96 112Z" fill="${a.hair}"/><path d="M226 100 Q268 80 292 44 Q256 62 222 78Z" fill="${a.hair}"/>`
+  };
   const hairFront = {
+    ...SHOP_HAIR,
     "Soft bob": `<path d="M88 118 Q79 42 160 43 Q241 42 232 118 Q205 91 185 96 Q150 111 88 118Z" fill="${a.hair}"/><path d="M94 112 Q85 159 108 177 L121 139Z M226 112 Q235 159 212 177 L199 139Z" fill="${a.hair}"/>`,
     "Long waves": `<path d="M86 111 Q76 35 160 40 Q244 35 234 111 L247 224 Q221 244 214 198 L222 117Z" fill="${a.hair}"/><path d="M94 110 Q79 170 87 220 Q111 238 119 184 L113 116Z" fill="${a.hair}"/>`,
     "Twin tails": `<path d="M87 113 Q79 39 160 41 Q241 39 233 113 Q202 87 160 96 Q119 88 87 113Z" fill="${a.hair}"/><path d="M111 89 Q132 67 157 92 Q133 104 111 89Z" fill="${a.hair}"/>`,
@@ -453,20 +468,46 @@ function avatarDataUri(value, seed="perfect-storm-player", view="0 0 320 320") {
     "Storm hoodie": `<path d="M104 210 Q160 183 216 210 L247 300 L73 300Z" fill="${a.clothes}"/><path d="M130 207 Q160 168 190 207" stroke="#3B3F63" stroke-width="10" fill="none"/><path d="M150 214 L150 246 M170 214 L170 246" stroke="#D7FF3A" stroke-width="4" stroke-linecap="round"/><path d="M166 252 L150 276 H162 L156 298 L180 268 H167 L174 252Z" fill="#D7FF3A" stroke="#302B40" stroke-width="2" stroke-linejoin="round"/>`,
     "Storm cloak": `<path d="M88 206 Q160 178 232 206 L266 300 L54 300Z" fill="#363A62"/><path d="M88 206 Q160 178 232 206" stroke="#D7FF3A" stroke-width="5" fill="none"/><path d="M160 190 L160 300" stroke="#262A4D" stroke-width="3"/><circle cx="160" cy="216" r="10" fill="#D7FF3A" stroke="#302B40" stroke-width="2"/><path d="M165 208 L156 218 H162 L158 227 L168 215 H162Z" fill="#302B40"/><path d="M70 270 Q160 252 250 270" stroke="#FFFFFF" stroke-width="2" fill="none" opacity=".35"/>`
   };
-  const outfitShape = NEW_OUTFITS[a.outfit] || baseOutfit;
+  const SHOP_OUTFITS = {
+    "Denim jacket": `<path d="M104 208 Q160 184 216 208 L250 300 L70 300Z" fill="#6F8FBF"/><path d="M140 204 Q160 226 180 204 L172 262 H148Z" fill="#FFFFFF"/><path d="M122 210 L150 250 L141 205Z M198 210 L170 250 L179 205Z" fill="#4A6490"/><path d="M160 226 V300" stroke="#4A6490" stroke-width="4"/><path d="M96 258 H132 M188 258 H224" stroke="#E8F0FF" stroke-width="3" stroke-dasharray="5 4"/><circle cx="160" cy="244" r="4" fill="#E8C468"/><circle cx="160" cy="270" r="4" fill="#E8C468"/>`,
+    "Starry pajamas": `<path d="M104 208 Q160 184 216 208 L250 300 L70 300Z" fill="#3E3F7A"/><path d="M130 208 Q160 230 190 208" stroke="#F4F0FF" stroke-width="5" fill="none"/>${star4(128, 250, 10, "#FFE29B")}${star4(196, 242, 8, "#FFE29B")}${star4(160, 278, 11, "#FFE29B")}${star4(104, 284, 7, "#FFE29B")}${star4(220, 280, 8, "#FFE29B")}<circle cx="160" cy="228" r="3.5" fill="#FFE29B"/><circle cx="160" cy="246" r="3.5" fill="#FFE29B"/>`,
+    "Stage jacket": `<path d="M100 208 Q160 182 220 208 L254 300 L66 300Z" fill="#2B2740"/><path d="M100 208 Q160 182 220 208" stroke="#E9C46A" stroke-width="6" fill="none"/><path d="M122 206 L160 258 L198 206" stroke="#E9C46A" stroke-width="5" fill="none" stroke-linejoin="round"/><path d="M160 258 V300" stroke="#E9C46A" stroke-width="4"/><circle cx="160" cy="270" r="5" fill="#E9C46A"/><circle cx="160" cy="286" r="5" fill="#E9C46A"/><path d="M88 236 L98 262 M232 236 L222 262" stroke="#E9C46A" stroke-width="4" stroke-linecap="round"/>${star4(132, 280, 7, "#E9C46A")}${star4(188, 280, 7, "#E9C46A")}`,
+    "Neon windbreaker": `<path d="M102 208 Q160 183 218 208 L250 300 L70 300Z" fill="${a.clothes}"/><path d="M102 208 L70 300 H92 L118 214Z M218 208 L250 300 H228 L202 214Z" fill="#D7FF3A"/><path d="M160 198 V300" stroke="#302B40" stroke-width="4"/><path d="M148 208 Q160 222 172 208" stroke="#302B40" stroke-width="5" fill="none"/><rect x="164" y="226" width="6" height="14" rx="3" fill="#D7FF3A" stroke="#302B40" stroke-width="2"/>`,
+    "Cloud dress": `<path d="M108 208 Q160 186 212 208 L232 262 Q226 282 214 278 Q210 300 190 292 Q176 304 160 294 Q144 304 130 292 Q110 300 106 278 Q94 282 88 262Z" fill="#F4F8FF" stroke="#B9C6F0" stroke-width="3"/><path d="M130 208 Q160 226 190 208" stroke="#B9C6F0" stroke-width="5" fill="none"/><g fill="#DDE7FF" opacity=".9"><circle cx="128" cy="258" r="11"/><circle cx="196" cy="250" r="9"/><circle cx="160" cy="270" r="12"/></g>`
+  };
+  const outfitShape = NEW_OUTFITS[a.outfit] || SHOP_OUTFITS[a.outfit] || baseOutfit;
   const NEW_ACCESSORIES = {
     "Raindrop clip": `<path d="M214 66 Q232 92 214 108 Q196 92 214 66Z" fill="#8FD3FF" stroke="#FFFFFF" stroke-width="3"/><path d="M208 90 Q208 98 214 101" stroke="#FFFFFF" stroke-width="3" fill="none" stroke-linecap="round" opacity=".8"/>`,
     "Storm cloud": `<g stroke="#FFFFFF" stroke-width="3"><circle cx="128" cy="30" r="16" fill="#8E97BF"/><circle cx="160" cy="20" r="21" fill="#9AA3C9"/><circle cx="194" cy="31" r="15" fill="#8E97BF"/><rect x="122" y="30" width="78" height="18" rx="9" fill="#9AA3C9" stroke="none"/></g><path d="M165 22 L154 40 H162 L157 54 L174 36 H166 L172 22Z" fill="#D7FF3A" stroke="#302B40" stroke-width="2" stroke-linejoin="round"/>`,
     "Lightning pin": `<path d="M210 66 L194 94 H207 L199 120 L225 87 H212 L221 66Z" fill="#D7FF3A" stroke="#302B40" stroke-width="3" stroke-linejoin="round"/>`,
     "Neon halo": `<ellipse cx="160" cy="26" rx="54" ry="12" fill="none" stroke="#D7FF3A" stroke-width="12" opacity=".28"/><ellipse cx="160" cy="26" rx="54" ry="12" fill="none" stroke="#F4FFB0" stroke-width="5"/>`
   };
+  const SHOP_ACCESSORIES = {
+    "Round glasses": `<g fill="#FFFFFF" fill-opacity=".18" stroke="#302B40" stroke-width="4"><circle cx="137" cy="132" r="19"/><circle cx="183" cy="132" r="19"/></g><path d="M156 130 Q160 125 164 130 M118 128 L100 124 M202 128 L220 124" stroke="#302B40" stroke-width="4" fill="none" stroke-linecap="round"/>`,
+    "Sunglasses": `<g fill="#2B2740"><rect x="114" y="116" width="44" height="28" rx="11"/><rect x="162" y="116" width="44" height="28" rx="11"/></g><path d="M158 126 H162 M114 124 L98 120 M206 124 L222 120" stroke="#2B2740" stroke-width="4" stroke-linecap="round"/><path d="M121 123 L133 123 M169 123 L181 123" stroke="#FFFFFF" stroke-opacity=".5" stroke-width="3" stroke-linecap="round"/>`,
+    "Cat ears": `<path d="M96 96 Q160 28 224 96" stroke="#3B3F63" stroke-width="8" fill="none" stroke-linecap="round"/><path d="M100 78 L106 28 L146 58Z M220 78 L214 28 L174 58Z" fill="#3B3F63" stroke="#FFFFFF" stroke-width="3" stroke-linejoin="round"/><path d="M113 62 L114 42 L132 54Z M207 62 L206 42 L188 54Z" fill="#F3A9CC"/>`,
+    "Fuzzy scarf": `<path d="M114 200 Q160 236 206 200 L214 226 Q160 258 106 226Z" fill="#E9606E" stroke="#302B40" stroke-width="3" stroke-linejoin="round"/><path d="M184 232 L206 290 L178 296 L168 244Z" fill="#E9606E" stroke="#302B40" stroke-width="3" stroke-linejoin="round"/><path d="M178 262 L200 258 M180 278 L203 274" stroke="#FFFFFF" stroke-width="4" stroke-linecap="round"/>`,
+    "Pearl headband": `${[...Array(9)].map((_, i) => { const t = i / 8, x = (1 - t) ** 2 * 94 + 2 * (1 - t) * t * 160 + t * t * 226, y = (1 - t) ** 2 * 112 + 2 * (1 - t) * t * 8 + t * t * 112; return `<circle cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="7" fill="#FFFFFF" stroke="#D9CFF0" stroke-width="2.5"/>`; }).join("")}`,
+    "Gold crown": `<path d="M110 74 L120 40 L142 62 L160 32 L178 62 L200 40 L210 74Z" fill="#F5D58C" stroke="#302B40" stroke-width="3" stroke-linejoin="round"/><circle cx="160" cy="58" r="5" fill="#F49DB6"/><circle cx="130" cy="64" r="4" fill="#8FD3FF"/><circle cx="190" cy="64" r="4" fill="#8FD3FF"/>`,
+    "Crystal tiara": `<ellipse cx="160" cy="48" rx="68" ry="26" fill="#BFE6FF" opacity=".22"/><path d="M104 78 L116 48 L132 68 L146 36 L160 64 L174 36 L188 68 L204 48 L216 78Z" fill="#E6F6FF" stroke="#7FB8E6" stroke-width="3" stroke-linejoin="round"/><path d="M146 36 L141 54 M160 64 L160 44 M174 36 L179 54" stroke="#FFFFFF" stroke-width="3" fill="none"/>${star4(160, 26, 8, "#FFFFFF")}`
+  };
   const bolt = (x, y) => `<path d="M${x} ${y} L${x - 12} ${y + 24} H${x - 1} L${x - 7} ${y + 46} L${x + 14} ${y + 18} H${x + 3} L${x + 10} ${y}Z"/>`;
   const aura = a.aura === "Lightning aura"
     ? `<circle cx="160" cy="160" r="146" fill="none" stroke="#D7FF3A" stroke-width="3" stroke-dasharray="7 11" opacity=".75"/><circle cx="160" cy="160" r="128" fill="#D7FF3A" opacity=".08"/><g fill="#D7FF3A" stroke="#302B40" stroke-width="2" stroke-linejoin="round">${bolt(28, 60)}${bolt(286, 40)}${bolt(270, 214)}${bolt(42, 220)}</g>`
-    : "";
+    : ({
+      "Sparkle aura": `<circle cx="160" cy="160" r="132" fill="#FFE29B" opacity=".12"/>${[[34,70,13],[290,56,11],[300,196,14],[24,200,10],[150,10,9],[250,126,7],[70,130,7]].map(([x,y,r]) => star4(x, y, r, "#FFE29B")).join("")}${[[60,36],[268,22],[304,130],[16,130],[40,276],[286,276]].map(([x,y]) => `<circle cx="${x}" cy="${y}" r="4" fill="#FFFFFF" opacity=".8"/>`).join("")}`,
+      "Rain shimmer": `<circle cx="160" cy="160" r="134" fill="#8FD3FF" opacity=".10"/><g stroke="#8FD3FF" stroke-width="4" stroke-linecap="round" opacity=".85">${[[30,40],[62,90],[22,150],[48,210],[34,270],[290,36],[262,92],[300,152],[272,214],[290,272],[120,16],[200,14]].map(([x,y]) => `<path d="M${x} ${y} l-7 20"/>`).join("")}</g><g fill="#FFFFFF" opacity=".7">${[[44,64],[276,60],[40,236],[284,240]].map(([x,y]) => `<circle cx="${x}" cy="${y}" r="4"/>`).join("")}</g>`,
+      "Rainbow storm": `<g fill="none" stroke-width="6" opacity=".7">${["#FF8FA3","#FFB36B","#FFE27A","#9BE7A6","#8FD3FF","#B9A7FF"].map((c, i) => `<circle cx="160" cy="160" r="${150 - i * 7}" stroke="${c}"/>`).join("")}</g><circle cx="160" cy="160" r="104" fill="#FFFFFF" opacity=".10"/>`
+    }[a.aura] || "");
+  const featherWing = `<path d="M100 222 Q28 196 14 96 Q44 126 66 120 Q50 146 86 160 Q64 176 104 190Z"`;
+  const SHOP_WINGS = {
+    "Cloud wings": mirror(`<g fill="#F4F8FF" stroke="#8E97BF" stroke-width="3"><circle cx="74" cy="196" r="26"/><circle cx="46" cy="164" r="23"/><circle cx="66" cy="130" r="24"/><circle cx="98" cy="154" r="26"/><circle cx="96" cy="192" r="22"/></g>`),
+    "Butterfly wings": mirror(`<path d="M104 196 Q44 84 14 112 Q2 168 104 208Z" fill="#F3A9CC" stroke="#FFFFFF" stroke-width="3" stroke-linejoin="round"/><path d="M104 212 Q52 246 38 228 Q28 196 104 206Z" fill="#B9A7FF" stroke="#FFFFFF" stroke-width="3" stroke-linejoin="round"/><circle cx="40" cy="136" r="9" fill="#FFE6F1"/><circle cx="64" cy="168" r="6" fill="#FFE6F1"/><circle cx="58" cy="222" r="5" fill="#E9E2FF"/>`),
+    "Rainbow wings": mirror(["#FF8FA3","#FFB36B","#FFE27A","#9BE7A6","#8FD3FF"].map((c, i) => `<g transform="translate(104 210) scale(${(1 - i * .16).toFixed(2)}) translate(-104 -210)">${featherWing} fill="${c}" stroke="#302B40" stroke-opacity=".35" stroke-width="2" stroke-linejoin="round"/></g>`).join(""))
+  };
   const wingShape = `<path d="M100 222 Q28 196 14 96 Q44 126 66 120 Q50 146 86 160 Q64 176 104 190Z" fill="#2E3259" stroke="#D7FF3A" stroke-width="3" stroke-linejoin="round"/><path d="M60 128 Q70 168 92 186 M40 118 Q50 160 80 182" stroke="#D7FF3A" stroke-width="2" fill="none" opacity=".6"/>`;
-  const wings = a.wings === "Storm wings" ? `${wingShape}<g transform="translate(320 0) scale(-1 1)">${wingShape}</g>` : "";
-  const accessory = {"Bow":`<path d="M112 76 Q87 52 91 91 Q105 103 121 87 Q137 105 150 89 Q154 52 126 73Z" fill="#F3A9CC" stroke="#FFFFFF" stroke-width="3"/><circle cx="121" cy="83" r="7" fill="#FFE6F1"/>`,"Star clip":`<path d="M212 78 L218 92 L233 94 L222 104 L225 119 L212 111 L199 119 L202 104 L191 94 L206 92Z" fill="#FFE29B" stroke="#FFFFFF" stroke-width="3"/>`,"Flower":`<g fill="#FFF0B8" stroke="#FFFFFF" stroke-width="2"><circle cx="214" cy="91" r="9"/><circle cx="228" cy="91" r="9"/><circle cx="221" cy="79" r="9"/><circle cx="221" cy="103" r="9"/></g><circle cx="221" cy="91" r="6" fill="#F2A9C9"/>`,"Headphones":`<path d="M91 123 Q83 46 160 46 Q237 46 229 123" stroke="#B8A7F5" stroke-width="12" fill="none"/><rect x="83" y="112" width="18" height="39" rx="8" fill="#B8A7F5"/><rect x="219" y="112" width="18" height="39" rx="8" fill="#B8A7F5"/>`,"Beret":`<path d="M93 83 Q142 35 218 76 Q230 88 217 98 L104 102 Q86 97 93 83Z" fill="#D9B8F0" stroke="#FFFFFF" stroke-width="3"/>`}[a.accessory] || NEW_ACCESSORIES[a.accessory] || "";
+  const wings = a.wings === "Storm wings" ? `${wingShape}<g transform="translate(320 0) scale(-1 1)">${wingShape}</g>` : (SHOP_WINGS[a.wings] || "");
+  const accessory = {"Bow":`<path d="M112 76 Q87 52 91 91 Q105 103 121 87 Q137 105 150 89 Q154 52 126 73Z" fill="#F3A9CC" stroke="#FFFFFF" stroke-width="3"/><circle cx="121" cy="83" r="7" fill="#FFE6F1"/>`,"Star clip":`<path d="M212 78 L218 92 L233 94 L222 104 L225 119 L212 111 L199 119 L202 104 L191 94 L206 92Z" fill="#FFE29B" stroke="#FFFFFF" stroke-width="3"/>`,"Flower":`<g fill="#FFF0B8" stroke="#FFFFFF" stroke-width="2"><circle cx="214" cy="91" r="9"/><circle cx="228" cy="91" r="9"/><circle cx="221" cy="79" r="9"/><circle cx="221" cy="103" r="9"/></g><circle cx="221" cy="91" r="6" fill="#F2A9C9"/>`,"Headphones":`<path d="M91 123 Q83 46 160 46 Q237 46 229 123" stroke="#B8A7F5" stroke-width="12" fill="none"/><rect x="83" y="112" width="18" height="39" rx="8" fill="#B8A7F5"/><rect x="219" y="112" width="18" height="39" rx="8" fill="#B8A7F5"/>`,"Beret":`<path d="M93 83 Q142 35 218 76 Q230 88 217 98 L104 102 Q86 97 93 83Z" fill="#D9B8F0" stroke="#FFFFFF" stroke-width="3"/>`}[a.accessory] || NEW_ACCESSORIES[a.accessory] || SHOP_ACCESSORIES[a.accessory] || "";
   const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="${view}"><defs><linearGradient id="bg" x2="1" y2="1"><stop stop-color="#FFF0F7"/><stop offset="1" stop-color="#EDE7FF"/></linearGradient></defs><rect width="320" height="320" rx="42" fill="url(#bg)"/><circle cx="160" cy="151" r="122" fill="#FFFFFF" opacity=".35"/>${aura}${wings}${hairBack}<path d="M95 300 Q96 203 160 198 Q224 203 225 300Z" fill="${a.clothes}" stroke="#493744" stroke-width="4"/><path d="M119 214 Q160 238 201 214" stroke="#FFFFFF" stroke-width="5" fill="none" opacity=".8"/><rect x="143" y="178" width="34" height="38" rx="14" fill="${a.skin}"/><ellipse cx="160" cy="128" rx="67" ry="78" fill="${a.skin}" stroke="#493744" stroke-width="4"/>${hairFront}${eyes}<ellipse cx="113" cy="151" rx="13" ry="7" fill="#F49DB6" opacity=".55"/><ellipse cx="207" cy="151" rx="13" ry="7" fill="#F49DB6" opacity=".55"/><path d="M154 151 Q160 157 166 151" stroke="#A66D72" stroke-width="3" fill="none" stroke-linecap="round"/>${outfitShape}${accessory}<path d="M135 291 Q160 301 185 291" stroke="#FFFFFF" stroke-width="4" fill="none" opacity=".8"/><path d="M50 80 l5 12 12 5 -12 5 -5 12 -5 -12 -12 -5 12 -5Z M265 178 l4 10 10 4 -10 4 -4 10 -4 -10 -10 -4 10 -4Z" fill="#F5D58C"/></svg>`;
   return `data:image/svg+xml;charset=UTF-8,${encodeURIComponent(svg)}`;
 }
@@ -570,6 +611,93 @@ async function saveWardrobe() {
   }
 }
 
+// ---- Shop (spend moasta points on chibi items) -------------------------------------------
+// MP earned = tasks (50 each) + checkpoints (+CHECKPOINT_MP) + finished boards (+BOARD_FINISH_MP).
+// Spendable balance = MP earned - MP spent. The leaderboard keeps ranking by MP EARNED.
+let shopFilter = "all";
+const SHOP_FILTERS = [["all", "All"], ["style", "Hairstyles"], ["outfit", "Outfits"], ["accessory", "Accessories"], ["aura", "Auras"], ["wings", "Wings"]];
+const SLOT_LABEL = { style: "Hairstyle", outfit: "Outfit", accessory: "Accessory", aura: "Aura", wings: "Wings" };
+
+function mpBalance() { return Math.max(0, (player?.mp || 0) - (player?.mpSpent || 0)); }
+function updateShopNav() {
+  const nav = $("shopNav");
+  if (nav && player) nav.textContent = `Shop · ${mpBalance()} MP`;
+}
+
+function renderShop() {
+  if (!player) return;
+  const owned = new Set(player.unlocks || []);
+  const balance = mpBalance();
+  const base = normaliseAvatarState(player.avatar, player.uid);
+  const all = CHIBI_ITEMS.filter(i => i.kind === "shop");
+  const items = all.filter(i => shopFilter === "all" || i.slot === shopFilter).sort((x, y) => x.price - y.price);
+
+  $("shopBalance").textContent = balance;
+  $("shopOwned").textContent = `${all.filter(i => owned.has(i.id)).length} / ${all.length} owned`;
+
+  const filters = $("shopFilters");
+  filters.innerHTML = "";
+  SHOP_FILTERS.forEach(([key, label]) => {
+    const b = document.createElement("button");
+    b.type = "button";
+    b.className = "shop-filter" + (shopFilter === key ? " active" : "");
+    b.textContent = label;
+    b.addEventListener("click", () => { shopFilter = key; renderShop(); });
+    filters.appendChild(b);
+  });
+
+  const grid = $("shopGrid");
+  grid.innerHTML = "";
+  items.forEach(item => {
+    const have = owned.has(item.id);
+    const look = { ...base, [item.slot]: item.name };
+    const card = document.createElement("div");
+    card.className = `shop-item rarity-${item.rarity}` + (have ? " owned" : "");
+    card.innerHTML = `
+      <img class="reward-chibi" src="${escapeHtml(avatarDataUri(look, player.uid))}" alt="">
+      <b>${escapeHtml(item.name)}</b>
+      <span class="shop-meta"><span class="rarity-chip">${item.rarity}</span> ${SLOT_LABEL[item.slot] || item.slot}</span>
+      ${have
+        ? `<button type="button" class="secondary-button shop-wear">Owned ✓ · Wear</button>`
+        : `<button type="button" class="shop-buy" ${balance < item.price ? "disabled" : ""}>Buy · ${item.price} MP</button>
+           ${balance < item.price ? `<small class="muted">${item.price - balance} MP to go</small>` : ""}`}
+    `;
+    card.querySelector(".shop-buy")?.addEventListener("click", ev => buyItem(item, ev.currentTarget));
+    card.querySelector(".shop-wear")?.addEventListener("click", ev => wearItem(item, ev.currentTarget));
+    grid.appendChild(card);
+  });
+}
+
+async function buyItem(item, button) {
+  button.disabled = true;
+  $("shopMessage").textContent = "Buying…";
+  try {
+    const { data, error } = await supabase.rpc("buy_chibi_item", { p_item: item.id });
+    if (error) throw error;
+    player = convertPlayer(data.player);
+    updatePlayerUI();
+    $("shopMessage").textContent = `You bought ${item.name}! Tap "Wear" to put it on.`;
+  } catch (error) {
+    $("shopMessage").textContent = error.message || "Could not buy this item.";
+    button.disabled = false;
+  }
+}
+
+async function wearItem(item, button) {
+  button.disabled = true;
+  try {
+    const look = { ...normaliseAvatarState(player.avatar, player.uid), [item.slot]: item.name };
+    const { data, error } = await supabase.rpc("equip_chibi", { p_avatar: JSON.stringify(look) });
+    if (error) throw error;
+    player = convertPlayer(data.player);
+    updatePlayerUI();
+    $("shopMessage").textContent = `Now wearing ${item.name}.`;
+  } catch (error) {
+    $("shopMessage").textContent = error.message || "Could not equip this item.";
+    button.disabled = false;
+  }
+}
+
 // ---- Finale / reward pop-up -------------------------------------------------------------
 const FINALE_TEXT = [
   { title: "You crossed the first storm!", text: "Board 1 complete. The sky clears for a moment… then the next storm gathers. “Ride the Storm” awaits." },
@@ -593,7 +721,7 @@ function launchConfetti() {
 }
 
 // Resolves with "close" or "wardrobe".
-function showReward({ board = null, ids = [], who }) {
+function showReward({ board = null, ids = [], who, bonusMp = 0 }) {
   return new Promise(resolve => {
     const modal = $("rewardModal");
     const items = ids.map(id => CHIBI_ITEMS.find(i => i.id === id)).filter(Boolean);
@@ -613,6 +741,7 @@ function showReward({ board = null, ids = [], who }) {
       $("rewardText").textContent = "You found something in the storm.";
       $("confetti").innerHTML = "";
     }
+    if (bonusMp) $("rewardText").textContent += ` +${bonusMp} MP added to your balance!`;
 
     $("rewardItems").innerHTML = items.map(item => {
       const look = { ...normaliseAvatarState(who?.avatar, who?.uid), [item.slot]: item.name };
@@ -885,11 +1014,16 @@ function renderTaskHistory() {
 
       // Plain tasks (and admin test accounts) can be ticked by tapping the counter.
       const tappable = !isAuto || player?.isAdmin;
+      // Two kinds of task: STREAMING ticks itself (Last.fm / stats.fm), NON-STREAMING is checked / unchecked by hand.
+      const kindChip = isAuto
+        ? `<span class="task-kind stream" title="Ticks itself when your streams show up on Last.fm / stats.fm">🎧 Streaming</span>`
+        : `<span class="task-kind manual" title="Tick it yourself when you have done it">✅ Non-streaming</span>`;
+      const counter = isAuto ? `${progress}/${target}` : (done ? "☑ Done" : "☐ To do");
       row.innerHTML = `
-        <span class="task-text">${escapeHtml(task)}</span>
+        <span class="task-text">${kindChip}${escapeHtml(task)}</span>
         ${tappable
-          ? `<button type="button" class="task-count" title="Tap to ${done ? "undo" : "finish"}">${progress}/${target}</button>`
-          : `<span class="task-count">${progress}/${target}</span>`}
+          ? `<button type="button" class="task-count" title="Tap to ${done ? "un-check" : "check"}">${counter}</button>`
+          : `<span class="task-count">${counter}</span>`}
       `;
 
       const button = row.querySelector("button.task-count");
@@ -1106,6 +1240,7 @@ function convertPlayer(data) {
     listeningSource: data.listening_source ?? null,
     listeningName: (data.listening_source === "statsfm" ? data.statsfm_username : data.lastfm_username) ?? null,
     mp: data.mp ?? 0,
+    mpSpent: data.mp_spent ?? 0,
     unlocks: data.unlocks || [],
     extraRolls: data.extra_rolls ?? 0,
     rollsToday: data.rolls_today ?? 0
@@ -1326,13 +1461,14 @@ async function doDailyRoll() {
 
     await animateRoll(data);
 
-    if (data.event_message) notify(data.event_message);
+    if (data.event_message || data.bonus_mp)
+      notify([data.event_message, data.bonus_mp ? `+${data.bonus_mp} MP bonus!` : ""].filter(Boolean).join(" "));
 
     // finished a board? checkpoint drop? show the finale / reward pop-up first
     let wantWardrobe = false;
     const newIds = data.new_unlocks || [];
     if (data.board_complete || newIds.length) {
-      const choice = await showReward({ board: data.board_complete || null, ids: newIds, who: finalPlayer });
+      const choice = await showReward({ board: data.board_complete || null, ids: newIds, who: finalPlayer, bonusMp: data.bonus_mp || 0 });
       wantWardrobe = choice === "wardrobe";
     }
 

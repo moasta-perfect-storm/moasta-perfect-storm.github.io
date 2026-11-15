@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta name="theme-color" content="#17152f">
-  <title>Moasta Perfect Storm — Daily Quest</title>
+  <title>TXT Perfect Storm — Daily Quest</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800;900&display=swap" rel="stylesheet">
@@ -20,6 +20,7 @@
       <button class="nav-link" data-view="tasksView">Tasklists</button>
       <button class="nav-link" data-view="leaderboardView">Leaderboard</button>
       <button class="nav-link" data-view="wardrobeView" id="wardrobeNav">Wardrobe</button>
+      <button class="nav-link" data-view="shopView" id="shopNav">Shop</button>
     </nav>
     <div class="top-right">
       <button id="soundToggle" class="nav-link sound-toggle" type="button" aria-label="Sound on" title="Sound on/off">🔊</button>
@@ -161,8 +162,20 @@
         </div>
       </section>
 
+      <section id="shopView" class="app-view hidden">
+        <div class="section-heading"><p class="eyebrow">MOASTA POINTS</p><h1>Shop <span class="sparkle">✦</span></h1><p class="muted">Spend your MP on hairstyles, outfits, accessories, auras and wings. Every completed task = 50 MP, every checkpoint = +10 MP, finishing board 1 / 2 / 3 = +25 / +50 / +75 MP. Rarer items cost more, so choose wisely!</p></div>
+        <section class="panel shop-panel">
+          <div class="shop-top">
+            <div class="shop-balance"><span class="muted">Your balance</span><strong><span id="shopBalance">0</span> MP</strong><small id="shopOwned" class="muted"></small></div>
+            <div id="shopFilters" class="shop-filters"></div>
+          </div>
+          <div id="shopGrid" class="shop-grid"></div>
+          <p id="shopMessage" class="form-message" role="status"></p>
+        </section>
+      </section>
+
       <section id="wardrobeView" class="app-view hidden">
-        <div class="section-heading"><p class="eyebrow">YOUR CHIBI</p><h1>Wardrobe <span class="sparkle">✦</span></h1><p class="muted">Items drop at checkpoints (common) and when you finish a board (rarer). Locked items show how to earn them.</p></div>
+        <div class="section-heading"><p class="eyebrow">YOUR CHIBI</p><h1>Wardrobe <span class="sparkle">✦</span></h1><p class="muted">Items drop at checkpoints (common) and when you finish a board (rarer); everything else is bought in the Shop with MP. Locked items show how to get them.</p></div>
         <section class="panel wardrobe-panel"><div id="wardrobeHost"></div><p id="wardrobeMessage" class="form-message" role="status"></p></section>
       </section>
     </section>
