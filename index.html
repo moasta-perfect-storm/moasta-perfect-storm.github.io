@@ -1,0 +1,198 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="theme-color" content="#17152f">
+  <title>Moasta Perfect Storm — Daily Quest</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800;900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="./style.css">
+</head>
+<body>
+  <div class="storm-fx" aria-hidden="true"><div class="clouds"></div><div class="rain far"></div><div class="rain"></div><div class="flash"></div></div>
+  <div class="ambient ambient-one"></div><div class="ambient ambient-two"></div>
+  <header class="topbar">
+    <a class="brand" href="#" aria-label="TXT Perfect Storm home"><span class="brand-mark">✦</span> PERFECT STORM</a>
+    <nav id="mainNav" class="main-nav hidden">
+      <button class="nav-link active" data-view="gameView">Game</button>
+      <button class="nav-link" data-view="tasksView">Tasklists</button>
+      <button class="nav-link" data-view="leaderboardView">Leaderboard</button>
+      <button class="nav-link" data-view="wardrobeView" id="wardrobeNav">Wardrobe</button>
+    </nav>
+    <div class="top-right">
+      <button id="soundToggle" class="nav-link sound-toggle" type="button" aria-label="Sound on" title="Sound on/off">🔊</button>
+      <div class="top-user" id="topUser"></div>
+    </div>
+  </header>
+
+  <main class="page-shell">
+    <section id="tutorialScreen" class="welcome-screen panel">
+      <p class="eyebrow">A TOMORROW X TOGETHER INSPIRED GAME</p>
+      <h1>Find your way<br><span>through the Perfect Storm.</span></h1>
+      <p class="welcome-copy">Roll up to 3 times a day, finish your listening quests to earn Moasta Points, discover surprises and climb the board with your chibi character.</p>
+      <div class="tutorial-steps">
+        <div><span>01</span><b>Roll the dice</b><small>Your roll moves your character and reveals today's tasks.</small></div>
+        <div><span>02</span><b>Explore the board</b><small>Climb ladders, enter storm portals and uncover gifts.</small></div>
+        <div><span>03</span><b>Cross three boards</b><small>Checkpoints protect you from storms and drop chibi items. Finishing a board unlocks a rarer one.</small></div>
+        <div><span>04</span><b>Climb the rankings</b><small>Your board position determines your leaderboard rank.</small></div>
+      </div>
+      <button id="startButton" class="primary-button">Enter the storm <span>→</span></button>
+      <p id="startMessage" class="form-message center" role="status"></p>
+      <p class="fine-print">Fan-made, unofficial TXT-inspired project. Not affiliated with BIGHIT MUSIC or TXT.</p>
+    </section>
+
+    <section id="authScreen" class="auth-screen panel hidden">
+      <p class="eyebrow">JOIN THE JOURNEY</p>
+      <h2>Enter your player account</h2>
+      <p class="muted">Pick a unique username and a password. No email needed — your username is your account, so remember your password!</p>
+      <div class="auth-tabs">
+        <button id="signupTab" class="auth-tab active">Create account</button>
+        <button id="loginTab" class="auth-tab">Log in</button>
+      </div>
+      <form id="authForm" class="stack-form">
+        <label>Username<input id="usernameInput" maxlength="18" autocomplete="username" autocapitalize="off" spellcheck="false" required placeholder="3–18 letters, numbers or _"></label>
+        <label>Password<input id="passwordInput" type="password" autocomplete="current-password" minlength="6" required placeholder="At least 6 characters"></label>
+        <button id="authSubmit" class="primary-button" type="submit">Continue <span>→</span></button>
+      </form>
+      <p id="authMessage" class="form-message" role="status"></p>
+    </section>
+
+    <section id="profileScreen" class="profile-screen panel hidden">
+      <p class="eyebrow">YOUR PLAYER ID</p>
+      <h2>Choose your character</h2>
+      <p class="muted">Build your own chibi. Choose its hairstyle, outfit, accessories and colours. Your saved chibi will appear on the board and leaderboard.</p>
+      <form id="profileForm" class="stack-form">
+        <label for="playerName">
+          <span>Username</span>
+          <input id="playerName" maxlength="18" required placeholder="Choose a username" autocomplete="nickname">
+        </label>
+
+        <div class="field-label">
+          <span>Customise your chibi</span>
+          <div id="avatarPicker" class="avatar-picker"></div>
+        </div>
+
+        <button id="profileSaveButton" class="primary-button" type="submit">
+          Save character <span>→</span>
+        </button>
+      </form>
+      <p id="profileMessage" class="form-message" role="status"></p>
+    </section>
+
+    <section id="appScreen" class="hidden">
+      <section id="gameView" class="app-view">
+        <div class="hero-row">
+          <div><p class="eyebrow">YOUR DAILY ADVENTURE</p><h1>Welcome, <span id="welcomeName">player</span> <span class="sparkle">✦</span></h1><p class="muted">Every roll takes you somewhere new.</p></div>
+          <div class="profile-chip" id="profileChip"></div>
+        </div>
+        <div class="game-layout">
+          <section class="board-card panel">
+            <div class="board-heading"><div><p class="eyebrow" id="boardEyebrow">THE JOURNEY</p><h2 id="boardTitle">Perfect Storm Board</h2></div><div class="position-pill">TILE <b id="currentPosition">1</b></div></div>
+            <div id="boardTabs" class="board-tabs" role="tablist"></div>
+            <div id="boardStart" class="board-start hidden"></div>
+            <div id="board" class="board" aria-label="Perfect Storm game board"></div>
+            <div class="board-legend">
+              <span id="legendMilestone"><i class="legend-dot milestone-dot"></i> Milestone</span><span><i class="legend-dot ladder-dot"></i> Ladder</span><span><i class="legend-dot storm-dot"></i> Storm portal</span><span><i class="legend-dot gift-dot"></i> Surprise</span>
+            </div>
+          </section>
+          <aside class="side-column">
+            <section class="panel roll-card">
+              <p class="eyebrow">TODAY'S MOVE</p>
+              <div id="diceVisual" class="dice-visual"><span id="diceNumber">?</span></div>
+              <p id="rollStatus" class="muted center">Your next adventure awaits.</p>
+              <button id="rollButton" class="primary-button full-width">Roll dice ✦</button>
+              <p class="countdown-label">Next roll available in</p>
+              <p id="countdown" class="countdown">--:--:--</p>
+              <p class="fine-print center">Daily reset: 12:00 AM KST</p>
+            </section>
+            <section class="panel stats-card">
+              <p class="eyebrow">YOUR PROGRESS</p>
+              <div class="stat-line"><span>Current tile</span><b id="statPosition">1 / 300</b></div>
+              <div class="stat-line"><span>Board</span><b id="statBoard">1 / 3</b></div>
+              <div class="stat-line"><span>Highest checkpoint</span><b id="statMilestone">Start</b></div>
+              <div class="stat-line"><span>Rolls today</span><b id="statRoll">0 / 3</b></div>
+            </section>
+            <section id="adminPanel" class="panel admin-card hidden">
+              <p class="eyebrow">ADMIN · TESTING ONLY</p>
+              <label class="admin-field">Dice for next roll
+                <select id="adminDice">
+                  <option value="">Random</option>
+                  <option value="1">1</option><option value="2">2</option><option value="3">3</option>
+                  <option value="4">4</option><option value="5">5</option><option value="6">6</option>
+                </select>
+              </label>
+              <div class="admin-pair">
+                <label class="admin-field">Tile<input id="adminTile" type="number" min="1" max="300" value="1"></label>
+                <label class="admin-field">Checkpoint
+                  <select id="adminCheckpoint"><option value="0">None</option><option value="25">25</option><option value="50">50</option><option value="75">75</option><option value="125">125</option><option value="150">150</option><option value="175">175</option></select>
+                </label>
+              </div>
+              <div class="admin-buttons">
+                <button id="adminGo" class="secondary-button" type="button">Move me there</button>
+                <button id="adminReset" class="secondary-button" type="button">Reset to tile 1</button>
+              </div>
+              <p class="fine-print">Rolls are unlimited for admins and replace today's tasklist. Gifts re-arm every time you move.</p>
+            </section>
+            <section class="panel rules-mini">
+              <b id="rulesTitle">Storm checkpoint rule</b>
+              <p id="rulesText">Storm portals can take you down only as far as your highest unlocked milestone. Surprise gifts can still move you below it.</p>
+            </section>
+          </aside>
+        </div>
+      </section>
+
+      <section id="tasksView" class="app-view hidden">
+        <div class="section-heading"><p class="eyebrow">YOUR DAILY QUESTS</p><h1>Tasklists <span class="sparkle">✦</span></h1><p class="muted">Tasks tick themselves when the songs show up on Last.fm or stats.fm. Every finished task earns <b>50 Moasta Points</b>.</p></div>
+        <section id="listeningPanel" class="panel listening-panel"></section>
+        <div id="taskHistory" class="task-history"></div>
+        <section id="songHistory" class="panel song-history"></section>
+      </section>
+
+      <section id="leaderboardView" class="app-view hidden">
+        <div class="section-heading"><p class="eyebrow">THE STORM'S TOP PLAYERS</p><h1>Leaderboard <span class="sparkle">✦</span></h1><p class="muted">Ranked by moasta points (earned from finished tasks), then highest milestone, then current tile position.</p></div>
+        <div class="leaderboard-layout">
+          <div class="panel leaderboard-panel">
+          <div class="leaderboard-head"><span>PLAYER</span><span>CHECKPOINT</span><span>TILE</span><span>MOASTAPOINTS</span></div>
+          <div id="leaderboardRows"><p class="muted">Loading players…</p></div>
+        </div>
+          <aside id="streamStats" class="panel stream-panel"><p class="muted">Loading streams…</p></aside>
+        </div>
+      </section>
+
+      <section id="wardrobeView" class="app-view hidden">
+        <div class="section-heading"><p class="eyebrow">YOUR CHIBI</p><h1>Wardrobe <span class="sparkle">✦</span></h1><p class="muted">Items drop at checkpoints (common) and when you finish a board (rarer). Locked items show how to earn them.</p></div>
+        <section class="panel wardrobe-panel"><div id="wardrobeHost"></div><p id="wardrobeMessage" class="form-message" role="status"></p></section>
+      </section>
+    </section>
+  </main>
+
+  <div id="rewardModal" class="reward-modal hidden" role="dialog" aria-modal="true" aria-labelledby="rewardTitle">
+    <div id="confetti" class="confetti" aria-hidden="true"></div>
+    <div class="reward-card panel">
+      <p id="rewardEyebrow" class="eyebrow">NEW</p>
+      <h2 id="rewardTitle"></h2>
+      <p id="rewardText" class="muted"></p>
+      <div id="rewardItems" class="reward-items"></div>
+      <div class="reward-buttons">
+        <button id="rewardWardrobe" class="secondary-button" type="button">Open wardrobe</button>
+        <button id="rewardClose" class="primary-button" type="button">Continue <span>→</span></button>
+      </div>
+    </div>
+  </div>
+
+  <div id="taskReveal" class="modal-backdrop hidden">
+    <section class="task-reveal modal-card">
+      <button class="modal-close" id="closeReveal" aria-label="Close">×</button>
+      <p class="eyebrow">YOUR DICE RESULT</p>
+      <h2 id="revealTitle">You rolled a 4!</h2>
+      <p class="muted">Today's quests have arrived. Get ready!</p>
+      <div id="revealTasks" class="reveal-task-list"></div>
+      <p class="fine-print center">Your character will move after this list disappears…</p>
+    </section>
+  </div>
+  <div id="eventToast" class="event-toast hidden" role="status"></div>
+  <script type="module" src="./app.js"></script>
+</body>
+</html>
