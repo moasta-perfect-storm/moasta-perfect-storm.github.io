@@ -142,7 +142,7 @@ Tasks live in two separate tables (Supabase → Table Editor):
 | MP | 50 | 50 |
 | Picked | the **next row** by `sort_order`, top to bottom, no skips, then back to the top (the pointer is `profiles.stream_cursor`) | random (never one the player already has today) |
 
-Each roll **adds** 1 task from each table to today's list. Earlier tasks and their progress are never replaced (only admin test accounts replace their list when they roll).
+Each roll **adds** 1 task from each table to today's list. Earlier tasks and their progress are never replaced (admin test accounts can roll without a daily limit, and their tasks are added the same way).
 `song_tasks` is seeded with the PERFECT STORM album, top to bottom. `other_tasks` is a starter list: **change the wording to whatever your fans actually do**. Don't put quote marks around a title in an `other_tasks` row.
 Add a new task = add a row. Retire one with `active = false`. If you used the old single `task_pool` table, re-running the SQL copies its rows into the two new tables and removes it.
 Un-checking a task is blocked if the MP it gave was already spent in the Shop.
