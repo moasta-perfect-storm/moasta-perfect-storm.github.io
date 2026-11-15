@@ -531,7 +531,7 @@ body::before{
    STORMY SITE: drifting clouds, rain and occasional lightning behind everything.
    Turn it all off by adding  .storm-fx{display:none}  or set --storm-rain:0 below.
    ========================================================================== */
-:root{--storm-rain:.35}
+:root{--storm-rain:.10}
 .storm-fx{position:fixed;inset:0;z-index:-1;pointer-events:none;overflow:hidden}
 .storm-fx .clouds{position:absolute;inset:-20% -10% auto -10%;height:70%;
   background:
