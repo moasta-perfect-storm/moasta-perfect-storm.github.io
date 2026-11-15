@@ -128,6 +128,7 @@ function showView(viewId) {
   if (viewId === "leaderboardView") loadStreamStats();
   if (viewId === "wardrobeView") renderWardrobe();
   if (viewId === "shopView") renderShop();
+  if (viewId === "studioView") renderStudio();
 
   if (viewId === "tasksView") {
     loadSongHistory();
@@ -240,7 +241,7 @@ function makeToken(p, tileGlobal) {
     token.classList.add(portalAnimation.className);
   }
 
-  token.innerHTML = `<img class="chibi-image board-chibi" src="${escapeHtml(avatarDataUri(p.avatar, p.uid))}" alt="">`;
+  token.innerHTML = `<img class="chibi-image board-chibi" src="${escapeHtml(avatarDataUri(p.avatar, p.uid))}" alt=""><span class="token-name">${escapeHtml(p.name || "Player")}</span>`;
   token.title = p.name || "Player";
   return token;
 }
@@ -329,7 +330,13 @@ function renderBoard() {
     `;
 
     const stack = tile.querySelector(".player-stack");
-    (byTile.get(number) || []).slice(0, 5).forEach(p => stack.appendChild(makeToken(p, number)));
+    const here = (byTile.get(number) || []).slice(0, 5);
+    if (here.length) tile.classList.add("has-players");
+    here.forEach((p, i) => {
+      const token = makeToken(p, number);
+      token.style.setProperty("--label-row", i);   // stagger labels so a crowded tile stays readable
+      stack.appendChild(token);
+    });
 
     board.appendChild(tile);
   });
@@ -610,6 +617,87 @@ async function saveWardrobe() {
     $("wardrobeMessage").textContent = error.message || "Could not save your look.";
   }
 }
+
+// ---- Studio (photo stage: download your current chibi) ----------------------------------
+let studioBg = "stage";
+const STUDIO_PNG_SIZE = 1024;
+
+function avatarSvgText(value, seed, bg) {
+  const uri = avatarDataUri(value, seed);
+  let svg = decodeURIComponent(uri.slice(uri.indexOf(",") + 1));
+  const base = `<rect width="320" height="320" rx="42" fill="url(#bg)"/><circle cx="160" cy="151" r="122" fill="#FFFFFF" opacity=".35"/>`;
+  if (bg === "transparent") {
+    svg = svg.replace(base, "");
+  } else if (bg === "stage") {
+    const stage = `<defs><linearGradient id="stg" x2="0" y2="1"><stop stop-color="#1B1840"/><stop offset="1" stop-color="#3A2F6E"/></linearGradient><linearGradient id="beam" x2="0" y2="1"><stop stop-color="#FFFFFF" stop-opacity=".5"/><stop offset="1" stop-color="#FFFFFF" stop-opacity="0"/></linearGradient><radialGradient id="floor"><stop stop-color="#D7FF3A" stop-opacity=".55"/><stop offset="1" stop-color="#B9A7FF" stop-opacity=".15"/></radialGradient></defs><rect width="320" height="320" rx="42" fill="url(#stg)"/><path d="M130 0 L190 0 L262 312 L58 312Z" fill="url(#beam)" opacity=".55"/><ellipse cx="160" cy="302" rx="118" ry="16" fill="url(#floor)"/><ellipse cx="160" cy="302" rx="118" ry="16" fill="none" stroke="#FFFFFF" stroke-opacity=".45" stroke-width="2"/>`;
+    svg = svg.replace(base, stage);
+  }
+  // explicit size so every browser rasterises the SVG at the same resolution
+  return svg.replace("<svg ", `<svg width="${STUDIO_PNG_SIZE}" height="${STUDIO_PNG_SIZE}" `);
+}
+function svgToDataUri(svg) { return `data:image/svg+xml;charset=UTF-8,${encodeURIComponent(svg)}`; }
+
+function renderStudio() {
+  if (!player) return;
+  $("studioMessage").textContent = "";
+  $("studioStage").dataset.bg = studioBg;
+  $("studioImage").src = svgToDataUri(avatarSvgText(player.avatar, player.uid, studioBg));
+  $("studioName").textContent = player.name || "Player";
+  document.querySelectorAll(".studio-bg").forEach(b => {
+    const on = b.dataset.bg === studioBg;
+    b.classList.toggle("active", on);
+    b.setAttribute("aria-checked", String(on));
+  });
+}
+function studioFileName(ext) {
+  const safe = String(player?.name || "chibi").replace(/[^A-Za-z0-9_-]+/g, "_");
+  return `${safe}-perfect-storm-chibi.${ext}`;
+}
+function saveBlob(blob, name) {
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url; a.download = name;
+  document.body.appendChild(a); a.click(); a.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 2000);
+}
+function studioShutter() {
+  const flash = $("studioFlash");
+  flash.classList.remove("go"); void flash.offsetWidth; flash.classList.add("go");
+}
+async function downloadStudioPng() {
+  if (!player) return;
+  const msg = $("studioMessage");
+  try {
+    studioShutter();
+    const svg = avatarSvgText(player.avatar, player.uid, studioBg);
+    const img = new Image();
+    img.decoding = "async";
+    await new Promise((resolve, reject) => { img.onload = resolve; img.onerror = () => reject(new Error("Could not draw your chibi.")); img.src = svgToDataUri(svg); });
+    const canvas = document.createElement("canvas");
+    canvas.width = canvas.height = STUDIO_PNG_SIZE;
+    canvas.getContext("2d").drawImage(img, 0, 0, STUDIO_PNG_SIZE, STUDIO_PNG_SIZE);
+    const blob = await new Promise(resolve => canvas.toBlob(resolve, "image/png"));
+    if (!blob) throw new Error("Could not create the PNG.");
+    saveBlob(blob, studioFileName("png"));
+    msg.textContent = "Saved! Check your downloads.";
+  } catch (error) {
+    msg.textContent = error.message || "Download failed.";
+  }
+}
+function downloadStudioSvg() {
+  if (!player) return;
+  studioShutter();
+  saveBlob(new Blob([avatarSvgText(player.avatar, player.uid, studioBg)], { type: "image/svg+xml" }), studioFileName("svg"));
+  $("studioMessage").textContent = "Saved! Check your downloads.";
+}
+$("studioPng").addEventListener("click", downloadStudioPng);
+$("studioSvg").addEventListener("click", downloadStudioSvg);
+$("studioBgOptions").addEventListener("click", event => {
+  const b = event.target.closest(".studio-bg");
+  if (!b) return;
+  studioBg = b.dataset.bg;
+  renderStudio();
+});
 
 // ---- Shop (spend moasta points on chibi items) -------------------------------------------
 // MP earned = tasks (50 each) + checkpoints (+CHECKPOINT_MP) + finished boards (+BOARD_FINISH_MP).

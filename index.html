@@ -21,6 +21,7 @@
       <button class="nav-link" data-view="leaderboardView">Leaderboard</button>
       <button class="nav-link" data-view="wardrobeView" id="wardrobeNav">Wardrobe</button>
       <button class="nav-link" data-view="shopView" id="shopNav">Shop</button>
+      <button class="nav-link" data-view="studioView" id="studioNav" title="Photo stage — download your chibi">📷 Studio</button>
     </nav>
     <div class="top-right">
       <button id="soundToggle" class="nav-link sound-toggle" type="button" aria-label="Sound on" title="Sound on/off">🔊</button>
@@ -171,6 +172,33 @@
           </div>
           <div id="shopGrid" class="shop-grid"></div>
           <p id="shopMessage" class="form-message" role="status"></p>
+        </section>
+      </section>
+
+      <section id="studioView" class="app-view hidden">
+        <div class="section-heading"><p class="eyebrow">PHOTO STAGE</p><h1>Studio <span class="sparkle">✦</span></h1><p class="muted">Strike a pose and save your chibi. Downloads always use the look you currently have equipped.</p></div>
+        <section class="panel studio-panel">
+          <div class="studio-stage" id="studioStage">
+            <div class="studio-spot" aria-hidden="true"></div>
+            <img id="studioImage" class="studio-image" alt="Your chibi on stage" draggable="false">
+            <div class="studio-flash" id="studioFlash" aria-hidden="true"></div>
+            <span class="studio-name" id="studioName"></span>
+          </div>
+          <div class="studio-controls">
+            <div class="field-label"><span>Background</span>
+              <div class="studio-bg-options" id="studioBgOptions" role="radiogroup" aria-label="Background">
+                <button type="button" class="studio-bg active" data-bg="stage" role="radio" aria-checked="true">🎤 Stage</button>
+                <button type="button" class="studio-bg" data-bg="card" role="radio" aria-checked="false">🌸 Card</button>
+                <button type="button" class="studio-bg" data-bg="transparent" role="radio" aria-checked="false">✨ Transparent</button>
+              </div>
+            </div>
+            <div class="studio-buttons">
+              <button id="studioPng" class="primary-button" type="button">📷 Download PNG <span>↓</span></button>
+              <button id="studioSvg" class="secondary-button" type="button">Download SVG</button>
+            </div>
+            <p class="fine-print">PNG is 1024 × 1024. SVG stays sharp at any size. Changed your look? Save it in the Wardrobe first.</p>
+            <p id="studioMessage" class="form-message" role="status"></p>
+          </div>
         </section>
       </section>
 
