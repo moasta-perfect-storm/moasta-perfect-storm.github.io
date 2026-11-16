@@ -726,9 +726,9 @@ function myStreamsSummary() {
   const total = Number(myStreams?.total || 0);
   const byDay = new Map((myStreams?.days || []).map(x => [x.d, Number(x.n)]));
 
-  // last 14 KST days, oldest first
+  // last 14 KST days, today first
   const days = [];
-  for (let i = 13; i >= 0; i--) {
+  for (let i = 0; i < 14; i++) {
     const date = new Date(Date.now() - i * 86400000);
     const key = kstDateKey(date);
     days.push({ key, n: byDay.get(key) || 0, label: new Date(key + "T12:00:00Z").toLocaleDateString([], { weekday: "narrow", timeZone: "UTC" }), today: i === 0 });
@@ -805,7 +805,7 @@ function renderMyStreams() {
       </section>
 
       <section class="panel ms-panel">
-        <p class="eyebrow">LAST 14 DAYS</p>
+        <p class="eyebrow">LAST 14 DAYS · TODAY FIRST</p>
         <h3>Streams per day</h3>
         <div class="ms-days" role="img" aria-label="Streams per day for the last 14 days">
           ${m.days.map(d => `
