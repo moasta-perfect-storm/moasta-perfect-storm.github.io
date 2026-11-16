@@ -1468,7 +1468,7 @@ function renderSongHistory() {
 function renderLeaderboard() {
   const host = $("leaderboardRows");
 
-  const sorted = [...(window.latestPlayers || [])].sort((a, b) =>
+  const sorted = [...(window.latestPlayers || [])].filter(p => !p.isAdmin).sort((a, b) =>
     (b.mp || 0) - (a.mp || 0) ||
     (b.highestMilestone || 1) - (a.highestMilestone || 1) ||
     (b.position || 1) - (a.position || 1) ||
@@ -1527,7 +1527,7 @@ function convertPlayer(data) {
 async function loadLeaderboard() {
   const columns = "id, username, avatar, position, highest_milestone, mp";
 
-  // get_leaderboard() = players WITHOUT admin accounts (created by supabase-game-functions.sql).
+  // get_leaderboard() = all players incl. admins (flagged is_admin): admins show on the boards, not in the ranking.
   let { data, error } = await supabase.rpc("get_leaderboard");
 
   if (error) {
