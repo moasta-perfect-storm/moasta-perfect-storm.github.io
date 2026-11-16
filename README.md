@@ -65,7 +65,7 @@ To add or change items: `CHIBI_ITEMS` in `game-config.js`, the `chibi_items` ins
 
 ## Rules (enforced on the server in `roll_daily()`)
 
-- **3 rolls per KST day**, each with its own dice and its own tasks: Roll A = a random scenario, Roll B = mandatory, Roll C = 2 random (see *Task tables* below). A self-ticking task only counts songs played after the roll that gave it. The dice (movement) is rolled on the server.
+- **3 rolls per KST day**, each with its own dice and its own tasks: Roll A = 2 random, Roll B = mandatory, Roll C = 2 random (see *Task tables* below). A self-ticking task only counts songs played after the roll that gave it. The dice (movement) is rolled on the server.
 - You stop on the last tile of the board you are on (100 / 200 / 300); the next roll starts the next board.
 - Storm portals can't push you below your highest unlocked checkpoint (boards 1 and 2 only; board 3 has none).
 - Gifts: random forward / backward / dud / **roll one more time**, once per player per gift tile, and they never trigger another event.
@@ -137,7 +137,7 @@ Each player gets 3 rolls a day and each roll has its own table (Supabase → Tab
 
 | Roll | Table | What the player gets |
 |---|---|---|
-| 1 = **A** | `roll_a_tasks` (`scenario`, `sort_order`, `text`) | **one random scenario**: all rows sharing that `scenario` number (2 tasks each in the seed data) |
+| 1 = **A** | `roll_a_tasks` (`sort_order`, `text`) | **2 random rows** out of the active ones |
 | 2 = **B** | `roll_b_tasks` (`sort_order`, `text`) | **mandatory**: every active row, same for everyone |
 | 3 = **C** | `roll_c_tasks` (`sort_order`, `text`) | **2 random rows** out of the active ones |
 
