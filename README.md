@@ -65,7 +65,7 @@ To add or change items: `CHIBI_ITEMS` in `game-config.js`, the `chibi_items` ins
 
 ## Rules (enforced on the server in `roll_daily()`)
 
-- **3 rolls per KST day**, each with its own dice and its own tasks: Roll A = 2 random, Roll B = mandatory, Roll C = 2 random (see *Task tables* below). A self-ticking task only counts songs played after the roll that gave it. The dice (movement) is rolled on the server.
+- **3 rolls per KST day**, each with its own dice and its own tasks: Roll A = 10 random, Roll B = mandatory (5), Roll C = 5 random, so 20 tasks a day (see *Task tables* below). A self-ticking task only counts songs played after the roll that gave it. The dice (movement) is rolled on the server.
 - You stop on the last tile of the board you are on (100 / 200 / 300); the next roll starts the next board.
 - Storm portals can't push you below your highest unlocked checkpoint (boards 1 and 2 only; board 3 has none).
 - Gifts: random forward / backward / dud / **roll one more time**, once per player per gift tile, and they never trigger another event.
@@ -141,14 +141,14 @@ Each player gets 3 rolls a day and each roll has its own table (Supabase → Tab
 
 | Roll | Table | What the player gets |
 |---|---|---|
-| 1 = **A** | `roll_a_tasks` (`sort_order`, `text`) | **2 random rows** out of the active ones |
+| 1 = **A** | `roll_a_tasks` (`sort_order`, `text`) | **10 random rows** out of the active ones (streaming roll) |
 | 2 = **B** | `roll_b_tasks` (`sort_order`, `text`) | **mandatory**: every active row, same for everyone |
-| 3 = **C** | `roll_c_tasks` (`sort_order`, `text`) | **2 random rows** out of the active ones |
+| 3 = **C** | `roll_c_tasks` (`sort_order`, `text`) | **5 random rows** out of the active ones |
 
 All tables also have `mp` (default 50), `active` (set false to retire a row), and optional `song` + `count`.
 Normally the player ticks a task by hand on the Tasklists page (it appears under **To do**). If you fill in `song` (exact title) and `count`, that task ticks itself from Last.fm / stats.fm instead and appears under **Songs**.
 Each roll **adds** its tasks to today's list; earlier tasks and their progress are never replaced. Gift bonus rolls only move you and give no tasks. Admin test rolls past the third start again at A.
-Roll A and C stay the same all week; edit `roll_b_tasks` whenever Roll B changes (for example daily). The second Roll B row is a DUMMY, so replace its text.
+The 10 / 5 picks are the constants `c_pick_a` / `c_pick_c` in `roll_core()` (re-run the SQL after changing them). Keep at least that many active rows in `roll_a_tasks` / `roll_c_tasks`, otherwise players get fewer tasks. Retire time-limited rows (like Inkigayo pre-voting) with `active = false`.
 The old `song_tasks` / `other_tasks` tables are no longer used. Once you don't need them: `drop table if exists public.song_tasks, public.other_tasks;`
 Un-checking a task is blocked if the MP it gave was already spent in the Shop.
 
@@ -158,7 +158,7 @@ The **Shop** tab sells 23 items: hairstyles, outfits, accessories, auras and win
 
 Balance = MP earned − MP spent (`profiles.mp` − `profiles.mp_spent`). Buying runs on the server (`buy_chibi_item`), so nobody can buy without the points or buy twice.
 
-**Prices** (common 100–250, rare 400–750, epic 900–1400, legendary 1800; whole shop = 14,500 MP). A player can earn at most 300 MP a day (3 rolls × 2 tasks × 50), so on day 1 they can afford 1–2 cheap items at most, and even a perfect player needs about 7 weeks for everything. To make the shop faster / slower, change `price` in `game-config.js` **and** in the `chibi_items` insert in `supabase-game-functions.sql`, then re-run it.
+**Prices** (common 350–850, rare 1350–3000, epic 3000–4650, legendary 6000; whole shop = 48,350 MP). A player can earn at most 1,000 MP a day (20 tasks × 50), so on day 1 they can afford 2–3 cheap items at most, and even a perfect player needs about 7 weeks for everything. To make the shop faster / slower, change `price` in `game-config.js` **and** in the `chibi_items` insert in `supabase-game-functions.sql`, then re-run it.
 To add an item: a line in `CHIBI_ITEMS` (`kind: "shop"`, `price`), the same row in the SQL, and a drawing in `app.js` (`SHOP_HAIR`, `SHOP_OUTFITS`, `SHOP_ACCESSORIES`, `SHOP_WINGS` or the aura map, keyed by the item name).
 
 ## Editing on GitHub
@@ -182,6 +182,7 @@ delete from public.daily_rolls where player_id = 'YOUR-USER-UUID'
 More reset snippets are at the bottom of the SQL file.
 
 ## Changelog (this version)
+- **20 tasks a day**: Roll A gives 10 random streaming tasks, Roll B all 5 mandatory rows, Roll C 5 random rows. New Roll B / C tasks: Inkigayo pre-voting on LinC, Idolchamp, Mubeat, Muniverse, Coogoong and Higher ads. Shop prices ×3.33 to match the 1,000 MP/day ceiling. Existing databases: run `supabase-update-tasks-v11.sql` once.
 - Three task tables, one per roll (`roll_a_tasks`, `roll_b_tasks`, `roll_c_tasks`).
 - +10 MP per checkpoint, +25 / +50 / +75 MP for finishing boards 1 / 2 / 3.
 - Shop tab with 23 buyable chibi items (`buy_chibi_item`); balance = MP earned − MP spent.
@@ -203,7 +204,7 @@ More reset snippets are at the bottom of the SQL file.
 
 - **Ladder bug fixed**: the board on screen and the server rules now match (see "One row only").
 - Ladders and storms are exactly one row; storms 48→40 and 90→95 and gifts 13→12, 53→52, 86→85 moved to keep the no-loop rules.
-- 3 rolls per day, 2 tasks per roll; the Tasklists page groups tasks by roll.
+- 3 rolls per day, 2 tasks per roll; the Tasklists page groups tasks by roll. (Superseded: now 20 tasks a day, see the top of this changelog.)
 - Leaderboard: streams-collected box with the Perfect Storm songs; admin hidden.
 - Cards more transparent.
 
