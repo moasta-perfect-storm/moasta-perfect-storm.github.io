@@ -48,7 +48,7 @@ export const LADDERS = {
 
 
 // Day 1 of the season (KST). Backgrounds rotate daily through the 7 images.
-export const SEASON_START_DATE = "2026-11-14";
+export const SEASON_START_DATE = "2026-11-16";
 export const BACKGROUND_COUNT = 7;
 
 // 10 gift tiles. Each is opened once per player; one outcome is picked at random:
@@ -117,7 +117,7 @@ export const GIFTS = {
   ]
 };
 
-// OLD sample quests (no longer used). Tasks now live in the `song_tasks` and `other_tasks` tables: edit them in
+// OLD sample quests (no longer used). Tasks now live in the `roll_a_tasks`, `roll_b_tasks` and `roll_c_tasks` tables: edit them in
 // Supabase → Table Editor (see README).
 export const TASKS_BY_DICE = {
   1: ["Listen to one TXT song mindfully", "Write down one lyric that made you smile", "Take a 10-minute break"],
@@ -129,7 +129,7 @@ export const TASKS_BY_DICE = {
 };
 
 // Daily dice rolls (keep equal to c_rolls_per_day in supabase-game-functions.sql).
-// Each roll gives the first 2 tasks of its dice number (c_tasks_per_roll in the SQL).
+// Tasks come from the roll_a_tasks / roll_b_tasks / roll_c_tasks tables (Roll 1 = A, 2 = B, 3 = C).
 export const ROLLS_PER_DAY = 3;
 
 // The album shown in the leaderboard "streams collected" box. Titles are matched ignoring

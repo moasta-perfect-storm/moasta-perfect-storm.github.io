@@ -65,7 +65,7 @@ To add or change items: `CHIBI_ITEMS` in `game-config.js`, the `chibi_items` ins
 
 ## Rules (enforced on the server in `roll_daily()`)
 
-- **3 rolls per KST day**, each with its own dice and **2 tasks**: one task from `song_tasks` and one from `other_tasks` (see *Task tables* below). A song task only counts songs played after the roll that gave it. The dice (movement) is rolled on the server.
+- **3 rolls per KST day**, each with its own dice and its own tasks: Roll A = a random scenario, Roll B = mandatory, Roll C = 2 random (see *Task tables* below). A self-ticking task only counts songs played after the roll that gave it. The dice (movement) is rolled on the server.
 - You stop on the last tile of the board you are on (100 / 200 / 300); the next roll starts the next board.
 - Storm portals can't push you below your highest unlocked checkpoint (boards 1 and 2 only; board 3 has none).
 - Gifts: random forward / backward / dud / **roll one more time**, once per player per gift tile, and they never trigger another event.
@@ -91,7 +91,7 @@ Only songs played **after the player's roll** count. Two kinds of task:
 Players: Tasklists page → *Connect Last.fm*. They need their streaming app connected to Last.fm, and "Hide recent listening information" must be off in their Last.fm privacy settings.
 
 - **Change what counts**: edit the lists at the top of `index.ts` (group names, member names).
-- **Change the tasks**: edit `song_tasks` / `other_tasks` in Table Editor (see *Task tables*).
+- **Change the tasks**: edit `roll_a_tasks` / `roll_b_tasks` / `roll_c_tasks` in Table Editor (see *Task tables*).
 - Listening tasks can't be ticked by hand (the server refuses); admin test accounts can.
 - The checker looks at the last 3 days of rolls, so a tasklist can still finish after midnight.
 - The Tasklists page shows the last 20 songs that counted (stored in `listening_history`).
@@ -131,20 +131,21 @@ The cards let the daily background show through. Adjust `--panel`, `--overlay-a`
 
 The game, welcome, login and character screens are scaled to about 65% (one variable, `--app-zoom` near the bottom of `style.css`) so board and cards fit one laptop screen. Set it to `1` for no scaling.
 
-## Task tables (`song_tasks` and `other_tasks`)
+## Task tables (`roll_a_tasks`, `roll_b_tasks`, `roll_c_tasks`)
 
-Tasks live in two separate tables (Supabase → Table Editor):
+Each player gets 3 rolls a day and each roll has its own table (Supabase → Table Editor):
 
-| | `song_tasks` | `other_tasks` |
+| Roll | Table | What the player gets |
 |---|---|---|
-| Columns | `sort_order`, `text`, `song`, `count`, `distinct_songs`, `mp`, `active` | `sort_order`, `text`, `mp`, `active` |
-| Completed by | ticks itself from the player's **Last.fm or stats.fm** plays (`song` = exact title, empty = any TXT song; `count` = plays needed) | the player **checks / unchecks** it on the Tasklists page |
-| MP | 50 | 50 |
-| Picked | the **next row** by `sort_order`, top to bottom, no skips, then back to the top (the pointer is `profiles.stream_cursor`) | random (never one the player already has today) |
+| 1 = **A** | `roll_a_tasks` (`scenario`, `sort_order`, `text`) | **one random scenario**: all rows sharing that `scenario` number (2 tasks each in the seed data) |
+| 2 = **B** | `roll_b_tasks` (`sort_order`, `text`) | **mandatory**: every active row, same for everyone |
+| 3 = **C** | `roll_c_tasks` (`sort_order`, `text`) | **2 random rows** out of the active ones |
 
-Each roll **adds** 1 task from each table to today's list. Earlier tasks and their progress are never replaced (admin test accounts can roll without a daily limit, and their tasks are added the same way).
-`song_tasks` is seeded with the PERFECT STORM album, top to bottom. `other_tasks` is a starter list: **change the wording to whatever your fans actually do**. Don't put quote marks around a title in an `other_tasks` row.
-Add a new task = add a row. Retire one with `active = false`. If you used the old single `task_pool` table, re-running the SQL copies its rows into the two new tables and removes it.
+All tables also have `mp` (default 50), `active` (set false to retire a row), and optional `song` + `count`.
+Normally the player ticks a task by hand on the Tasklists page (it appears under **To do**). If you fill in `song` (exact title) and `count`, that task ticks itself from Last.fm / stats.fm instead and appears under **Songs**.
+Each roll **adds** its tasks to today's list; earlier tasks and their progress are never replaced. Gift bonus rolls only move you and give no tasks. Admin test rolls past the third start again at A.
+Roll A and C stay the same all week; edit `roll_b_tasks` whenever Roll B changes (for example daily). The second Roll B row is a DUMMY, so replace its text.
+The old `song_tasks` / `other_tasks` tables are no longer used. Once you don't need them: `drop table if exists public.song_tasks, public.other_tasks;`
 Un-checking a task is blocked if the MP it gave was already spent in the Shop.
 
 ## Shop (spend MP on chibi items)
@@ -163,8 +164,8 @@ You can change files directly on github.com (open the file → pencil icon → *
 ## Changing things
 
 - **Board / gifts / milestones**: edit `game-config.js` (what players SEE) **and** the matching constants at the top of `roll_daily()` in `supabase-game-functions.sql` (what the server DOES), then re-run the SQL. Keep the loop rules above.
-- **Tasks**: Supabase → Table Editor → `song_tasks` / `other_tasks` (see *Task tables*). Re-running the SQL never overwrites your edits. (`task_templates` and `supabase-listening-tasks.sql` are the OLD per-dice task lists and are no longer used.)
-- **Backgrounds**: `assets/backgrounds/background-1…7.jpg`, one per KST day from `SEASON_START_DATE`, cycling.
+- **Tasks**: Supabase → Table Editor → `roll_a_tasks` / `roll_b_tasks` / `roll_c_tasks` (see *Task tables*). Re-running the SQL never overwrites your edits. (`task_templates` and `supabase-listening-tasks.sql` are the OLD per-dice task lists and are no longer used.)
+- **Backgrounds**: `assets/backgrounds/background-1…7.jpg`, one per KST day from `SEASON_START_DATE` (2026-11-16 = background 1 … 2026-11-22 = background 7), then it cycles back to 1.
 - **Chibi options**: `CHIBI_OPTIONS` / `CHIBI_PALETTES` in `app.js`.
 
 ## Testing tip
@@ -177,7 +178,7 @@ delete from public.daily_rolls where player_id = 'YOUR-USER-UUID'
 More reset snippets are at the bottom of the SQL file.
 
 ## Changelog (this version)
-- Two task tables (`song_tasks` and `other_tasks`), 1 of each per roll.
+- Three task tables, one per roll (`roll_a_tasks`, `roll_b_tasks`, `roll_c_tasks`).
 - +10 MP per checkpoint, +25 / +50 / +75 MP for finishing boards 1 / 2 / 3.
 - Shop tab with 23 buyable chibi items (`buy_chibi_item`); balance = MP earned − MP spent.
 - **Update steps**: re-run `supabase-game-functions.sql` once, upload the site files again (check-listening needs no change).
