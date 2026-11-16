@@ -129,6 +129,7 @@ function showView(viewId) {
   if (viewId === "wardrobeView") renderWardrobe();
   if (viewId === "shopView") renderShop();
   if (viewId === "studioView") renderStudio();
+  if (viewId === "streamsView") loadMyStreams();
 
   if (viewId === "tasksView") {
     loadSongHistory();
@@ -699,6 +700,207 @@ $("studioBgOptions").addEventListener("click", event => {
   renderStudio();
 });
 
+// ---- My Streams (a personal look at the plays that counted) ------------------------------
+let myStreams = null;      // { total, first_at, songs:[{key,title,plays,last_at}], days:[{d,n}] }
+let myStreamsState = "idle"; // idle | loading | ready | error
+
+async function loadMyStreams() {
+  if (!currentUser) return;
+  myStreamsState = "loading";
+  renderMyStreams();
+  try {
+    const { data, error } = await supabase.rpc("get_my_streams");
+    if (error) throw error;
+    myStreams = data || { total: 0, songs: [], days: [] };
+    myStreamsState = "ready";
+  } catch (error) {
+    console.warn("Could not load my streams:", error);
+    myStreamsState = "error";
+  }
+  renderMyStreams();
+}
+
+// Everything the page and the share card show, worked out from the raw rows.
+function myStreamsSummary() {
+  const songs = (myStreams?.songs || []).map(x => ({ ...x, plays: Number(x.plays) }));
+  const total = Number(myStreams?.total || 0);
+  const byDay = new Map((myStreams?.days || []).map(x => [x.d, Number(x.n)]));
+
+  // last 14 KST days, oldest first
+  const days = [];
+  for (let i = 13; i >= 0; i--) {
+    const date = new Date(Date.now() - i * 86400000);
+    const key = kstDateKey(date);
+    days.push({ key, n: byDay.get(key) || 0, label: new Date(key + "T12:00:00Z").toLocaleDateString([], { weekday: "narrow", timeZone: "UTC" }), today: i === 0 });
+  }
+
+  // streak = consecutive KST days with a counted play, ending today (or yesterday if today is still empty)
+  let streak = 0;
+  for (let i = byDay.get(kstDateKey()) ? 0 : 1; i < 90; i++) {
+    if (byDay.get(kstDateKey(new Date(Date.now() - i * 86400000)))) streak++; else break;
+  }
+
+  const album = ALBUM_TRACKS.map(title => {
+    const hit = songs.find(x => x.key === songKey(title));
+    return { title, plays: hit ? hit.plays : 0 };
+  });
+  const albumPlayed = album.filter(x => x.plays > 0).length;
+  const top = songs[0] || null;
+  const topTitle = top ? (ALBUM_TRACKS.find(t => songKey(t) === top.key) || top.title) : "";
+  const named = songs.map(x => ({ ...x, title: ALBUM_TRACKS.find(t => songKey(t) === x.key) || x.title }));
+
+  return { total, songs: named, days, streak, album, albumPlayed, top: top && { title: topTitle, plays: top.plays },
+           activeDays: byDay.size, best: Math.max(0, ...days.map(d => d.n)) };
+}
+
+function renderMyStreams() {
+  const host = $("myStreams");
+  if (!host) return;
+
+  if (myStreamsState === "loading" && !myStreams) { host.innerHTML = `<p class="muted">Loading…</p>`; return; }
+  if (myStreamsState === "error" && !myStreams) {
+    host.innerHTML = `<section class="panel ms-empty"><h3>Could not load your streams</h3><p class="muted">If you haven’t yet, run the latest <b>supabase-game-functions.sql</b>, then reload the page.</p></section>`;
+    return;
+  }
+
+  const m = myStreamsSummary();
+  const fmt = n => Number(n || 0).toLocaleString();
+
+  if (!m.total) {
+    host.innerHTML = `
+      <section class="panel ms-empty">
+        <h3>No counted streams yet</h3>
+        <p class="muted">${player?.listeningName
+          ? "Play a TXT song, then open Tasklists and press “Check my listening”. Plays that count show up here."
+          : "Connect Last.fm or stats.fm on the Tasklists page. Plays that count for your tasks show up here."}</p>
+      </section>`;
+    return;
+  }
+
+  const maxDay = Math.max(1, ...m.days.map(d => d.n));
+  const maxSong = Math.max(1, ...m.songs.map(x => x.plays));
+  const maxAlbum = Math.max(1, ...m.album.map(x => x.plays));
+  const complete = m.albumPlayed === ALBUM_TRACKS.length;
+
+  host.innerHTML = `
+    <div class="ms-tiles">
+      <div class="panel ms-tile"><span>Total streams</span><b>${fmt(m.total)}</b></div>
+      <div class="panel ms-tile"><span>Songs played</span><b>${fmt(m.songs.length)}</b></div>
+      <div class="panel ms-tile"><span>Day streak</span><b>${m.streak ? "🔥 " + m.streak : "0"}</b></div>
+      <div class="panel ms-tile ms-top"><span>Top song</span><b title="${escapeHtml(m.top.title)}">${escapeHtml(m.top.title)}</b><small>${fmt(m.top.plays)} plays</small></div>
+    </div>
+
+    <div class="ms-grid">
+      <section class="panel ms-panel">
+        <p class="eyebrow">${escapeHtml(ALBUM_NAME)}</p>
+        <h3>Your album progress <span class="ms-badge">${m.albumPlayed}/${ALBUM_TRACKS.length} songs${complete ? " ✦" : ""}</span></h3>
+        <ul class="ms-bars">
+          ${m.album.map(x => `
+            <li class="${x.plays ? "" : "ms-zero"}">
+              <div class="ms-bar-row"><span>${escapeHtml(x.title)}</span><b>${fmt(x.plays)}</b></div>
+              <div class="ms-bar"><i style="width:${Math.round((x.plays / maxAlbum) * 100)}%"></i></div>
+            </li>`).join("")}
+        </ul>
+        ${complete ? `<p class="ms-note">You’ve played the whole album, nice work, MOA! 💜</p>` : `<p class="ms-note">${ALBUM_TRACKS.length - m.albumPlayed} left to complete the album.</p>`}
+      </section>
+
+      <section class="panel ms-panel">
+        <p class="eyebrow">LAST 14 DAYS</p>
+        <h3>Streams per day</h3>
+        <div class="ms-days" role="img" aria-label="Streams per day for the last 14 days">
+          ${m.days.map(d => `
+            <div class="ms-day${d.today ? " today" : ""}" title="${escapeHtml(d.key)}: ${d.n}">
+              <em>${d.n || ""}</em>
+              <span class="ms-col"><i style="height:${d.n ? Math.max(6, Math.round((d.n / maxDay) * 100)) : 2}%"></i></span>
+              <small>${escapeHtml(d.label)}</small>
+            </div>`).join("")}
+        </div>
+        <p class="ms-note">${m.activeDays} active ${m.activeDays === 1 ? "day" : "days"} · best day ${fmt(m.best)}</p>
+      </section>
+    </div>
+
+    <section class="panel ms-panel">
+      <p class="eyebrow">MOST PLAYED</p>
+      <h3>Your top songs</h3>
+      <ol class="ms-rank">
+        ${m.songs.slice(0, 10).map((x, i) => `
+          <li>
+            <span class="ms-n">${i + 1}</span>
+            <span class="ms-rank-main">
+              <span class="ms-rank-title">${escapeHtml(x.title)}</span>
+              <span class="ms-bar"><i style="width:${Math.round((x.plays / maxSong) * 100)}%"></i></span>
+            </span>
+            <b>${fmt(x.plays)}×</b>
+          </li>`).join("")}
+      </ol>
+      ${m.songs.length > 10 ? `<p class="ms-note">+ ${m.songs.length - 10} more songs</p>` : ""}
+      <div class="ms-actions">
+        <button id="msCardButton" class="primary-button" type="button">Download my stats card <span>↓</span></button>
+        <span id="msCardMessage" class="form-message" role="status"></span>
+      </div>
+    </section>
+  `;
+
+  $("msCardButton").addEventListener("click", downloadStreamsCard);
+}
+
+// A shareable 1080x1350 picture of the same numbers.
+function xmlText(value, max = 30) {
+  const text = String(value ?? "");
+  return escapeHtml(text.length > max ? text.slice(0, max - 1) + "…" : text);
+}
+function streamsCardSvg() {
+  const m = myStreamsSummary();
+  const fmt = n => Number(n || 0).toLocaleString();
+  const avatar = svgToDataUri(avatarSvgText(player.avatar, player.uid, "transparent"));
+  const topSongs = m.songs.slice(0, 3);
+  const maxTop = Math.max(1, ...topSongs.map(x => x.plays));
+  const albumDots = m.album.map((x, i) =>
+    `<circle cx="${540 - (m.album.length - 1) * 34 + i * 68}" cy="1160" r="18" fill="${x.plays ? "#D7FF3A" : "none"}" stroke="#D7FF3A" stroke-opacity="${x.plays ? 1 : .45}" stroke-width="4"/>`).join("");
+  const rows = topSongs.map((x, i) => {
+    const y = 790 + i * 92;
+    return `<text x="110" y="${y}" font-size="38" font-weight="700" fill="#fff">${i + 1}. ${xmlText(x.title, 24)}</text>
+      <text x="970" y="${y}" font-size="38" font-weight="800" fill="#D7FF3A" text-anchor="end">${fmt(x.plays)}×</text>
+      <rect x="110" y="${y + 16}" width="860" height="12" rx="6" fill="#ffffff" fill-opacity=".14"/>
+      <rect x="110" y="${y + 16}" width="${Math.max(14, Math.round(860 * x.plays / maxTop))}" height="12" rx="6" fill="url(#bar)"/>`;
+  }).join("");
+  return `<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="1080" height="1350" viewBox="0 0 1080 1350" font-family="Nunito, Arial, Helvetica, sans-serif">
+    <defs>
+      <linearGradient id="bgc" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#17152F"/><stop offset=".55" stop-color="#2B2360"/><stop offset="1" stop-color="#14224A"/></linearGradient>
+      <linearGradient id="bar" x1="0" x2="1"><stop offset="0" stop-color="#F3A9CC"/><stop offset="1" stop-color="#8FD3FF"/></linearGradient>
+    </defs>
+    <rect width="1080" height="1350" rx="64" fill="url(#bgc)"/>
+    <circle cx="930" cy="180" r="260" fill="#B9A7FF" fill-opacity=".12"/>
+    <circle cx="120" cy="1180" r="300" fill="#8FD3FF" fill-opacity=".08"/>
+    <text x="540" y="110" font-size="30" font-weight="800" fill="#F3A9CC" text-anchor="middle" letter-spacing="8">PERFECT STORM · MY STREAMS</text>
+    <image x="380" y="140" width="320" height="320" href="${avatar}" xlink:href="${avatar}"/>
+    <text x="540" y="520" font-size="54" font-weight="900" fill="#fff" text-anchor="middle">${xmlText(player.name || "MOA", 22)}</text>
+    <text x="540" y="650" font-size="150" font-weight="900" fill="#D7FF3A" text-anchor="middle">${fmt(m.total)}</text>
+    <text x="540" y="705" font-size="34" font-weight="700" fill="#fff" fill-opacity=".75" text-anchor="middle">streams counted${m.streak ? ` · 🔥 ${m.streak}-day streak` : ""}</text>
+    ${rows}
+    <text x="540" y="1098" font-size="30" font-weight="800" fill="#fff" fill-opacity=".8" text-anchor="middle">${xmlText(ALBUM_NAME, 30)} · ${m.albumPlayed}/${ALBUM_TRACKS.length} songs</text>
+    ${albumDots}
+    <text x="540" y="1275" font-size="26" font-weight="700" fill="#fff" fill-opacity=".5" text-anchor="middle">fan-made TXT Perfect Storm game</text>
+  </svg>`;
+}
+async function downloadStreamsCard() {
+  const msg = $("msCardMessage");
+  try {
+    if (!player || !myStreams) return;
+    const img = new Image();
+    await new Promise((resolve, reject) => { img.onload = resolve; img.onerror = () => reject(new Error("Could not draw your card.")); img.src = svgToDataUri(streamsCardSvg()); });
+    const canvas = document.createElement("canvas");
+    canvas.width = 1080; canvas.height = 1350;
+    canvas.getContext("2d").drawImage(img, 0, 0, 1080, 1350);
+    const blob = await new Promise(resolve => canvas.toBlob(resolve, "image/png"));
+    if (!blob) throw new Error("Could not create the picture.");
+    saveBlob(blob, studioFileName("png").replace("chibi", "streams"));
+    msg.textContent = "Saved! Check your downloads.";
+  } catch (error) {
+    msg.textContent = error.message || "Download failed.";
+  }
+}
+
 // ---- Shop (spend moasta points on chibi items) -------------------------------------------
 // MP earned = tasks (50 each) + checkpoints (+CHECKPOINT_MP) + finished boards (+BOARD_FINISH_MP).
 // Spendable balance = MP earned - MP spent. The leaderboard keeps ranking by MP EARNED.
@@ -1062,36 +1264,18 @@ function renderTaskHistory() {
     const completed = day.completed || [];
     const earned = completed.reduce((sum, i) => sum + ((day.mp || [])[i] ?? TASK_MP), 0);
 
-    // which dice were rolled that day (one entry per roll)
-    const rollList = [];
-    (day.task_roll || []).forEach((n, i) => {
-      if (!rollList.some(r => r.n === n)) rollList.push({ n, dice: (day.task_dice || [])[i] ?? day.roll });
-    });
-    const diceText = rollList.length ? rollList.map(r => r.dice).join(" · ") : day.roll;
-
     card.innerHTML = `
       <div class="task-day-head">
-        <div>
-          <p class="eyebrow">${escapeHtml(day.date)}${day.date === kstDateKey() ? " · TODAY" : ""}</p>
-          <h3>Dice ${rollList.length > 1 ? "rolls" : "roll"}: ${diceText}</h3>
-        </div>
+        <p class="eyebrow">${escapeHtml(day.date)}${day.date === kstDateKey() ? " · TODAY" : ""}</p>
         <small>${completed.length}/${day.tasks.length} completed <span class="day-mp">+${earned} moasta points</span> </small>
       </div>
     `;
 
-    let lastRollNo = null;
+    // Two lists: tasks that tick themselves from the player's songs, and a to-do list they tick by hand.
+    const songRows = [];
+    const todoRows = [];
 
     day.tasks.forEach((task, index) => {
-      // a small heading before each roll's tasks (only when the day has several rolls)
-      const rollNo = (day.task_roll || [])[index] ?? 1;
-      if (rollList.length > 1 && rollNo !== lastRollNo) {
-        const label = document.createElement("p");
-        label.className = "roll-label";
-        label.textContent = `ROLL ${rollNo} · DICE ${(day.task_dice || [])[index] ?? ""}`;
-        card.appendChild(label);
-      }
-      lastRollNo = rollNo;
-
       const done = completed.includes(index);
       const isAuto = (day.auto || [])[index] === true;
       const target = (day.targets || [])[index] || 1;
@@ -1135,7 +1319,16 @@ function renderTaskHistory() {
         });
       }
 
-      card.appendChild(row);
+      ((day.auto || [])[index] === true ? songRows : todoRows).push(row);
+    });
+
+    [["Songs", songRows], ["To do", todoRows]].forEach(([title, rows]) => {
+      if (!rows.length) return;
+      const section = document.createElement("div");
+      section.className = "task-section";
+      section.innerHTML = `<p class="task-section-title">${title}</p>`;
+      rows.forEach(row => section.appendChild(row));
+      card.appendChild(section);
     });
 
     host.appendChild(card);

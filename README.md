@@ -131,6 +131,10 @@ The cards let the daily background show through. Adjust `--panel`, `--overlay-a`
 
 The game, welcome, login and character screens are scaled to about 65% (one variable, `--app-zoom` near the bottom of `style.css`) so board and cards fit one laptop screen. Set it to `1` for no scaling.
 
+## My Streams tab
+
+A personal page for every player (nav: **My Streams**): total streams, songs played, day streak, top song, album progress bars, streams per day for the last 14 days, a top-10 list and a **Download my stats card** button (1080×1350 PNG). It reads the player's own counted plays through `get_my_streams()` (from `stream_ledger`; admin test accounts use their last 100 songs from `listening_history`). Redeploy the `check-listening` Edge Function so new plays also save the song title (older plays show a tidied-up title).
+
 ## Task tables (`roll_a_tasks`, `roll_b_tasks`, `roll_c_tasks`)
 
 Each player gets 3 rolls a day and each roll has its own table (Supabase → Table Editor):

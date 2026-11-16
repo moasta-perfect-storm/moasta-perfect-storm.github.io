@@ -24,6 +24,7 @@
       <button class="nav-link" data-view="leaderboardView">Leaderboard</button>
       <button class="nav-link" data-view="wardrobeView" id="wardrobeNav">Wardrobe</button>
       <button class="nav-link" data-view="shopView" id="shopNav">Shop</button>
+      <button class="nav-link" data-view="streamsView" id="streamsNav">My Streams</button>
       <button class="nav-link" data-view="studioView" id="studioNav" title="Photo stage — download your chibi">📷 Studio</button>
     </nav>
     <div class="top-right">
@@ -177,6 +178,11 @@
           <div id="shopGrid" class="shop-grid"></div>
           <p id="shopMessage" class="form-message" role="status"></p>
         </section>
+      </section>
+
+      <section id="streamsView" class="app-view hidden">
+        <div class="section-heading"><p class="eyebrow">YOUR LISTENING</p><h1>My Streams <span class="sparkle">✦</span></h1><p class="muted">Every play that counted for your tasks, song by song. Connect Last.fm or stats.fm and press “Check my listening” on the Tasklists page to update it.</p></div>
+        <div id="myStreams"><p class="muted">Loading…</p></div>
       </section>
 
       <section id="studioView" class="app-view hidden">

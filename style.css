@@ -726,3 +726,49 @@ img,svg{max-width:100%}
 .brand-logo{height:38px;width:auto;max-width:120px;object-fit:contain;display:block}
 .welcome-logo{display:block;height:96px;width:auto;max-width:200px;object-fit:contain;margin:0 0 14px}
 @media(max-width:620px){.brand-logo{height:30px}.welcome-logo{height:72px}}
+
+/* Tasklists: Songs / To do sections inside each day */
+.task-section{margin-top:6px}
+.task-section+.task-section{margin-top:18px}
+.task-section-title{margin:0 0 4px;font-size:11px;letter-spacing:1.6px;text-transform:uppercase;font-weight:900;color:var(--pink)}
+.task-section .task-row:first-of-type{border-top:0}
+
+/* ---- My Streams ---- */
+.ms-tiles{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:14px;margin-bottom:16px}
+.ms-tile{padding:18px;display:grid;gap:4px;min-width:0}
+.ms-tile span{font-size:11px;letter-spacing:1.4px;text-transform:uppercase;font-weight:900;color:var(--pink)}
+.ms-tile b{font-size:30px;line-height:1.15;color:#fff;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.ms-tile.ms-top b{font-size:20px;line-height:1.5}
+.ms-tile small{color:var(--muted);font-weight:700}
+.ms-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px;margin-bottom:16px}
+.ms-panel{padding:22px;min-width:0}
+.ms-panel h3{margin:2px 0 14px;display:flex;flex-wrap:wrap;align-items:center;gap:10px}
+.ms-badge{font-size:12px;padding:3px 10px;border-radius:99px;background:rgba(215,255,58,.14);border:1px solid rgba(215,255,58,.4);color:#e8ffa0}
+.ms-bars,.ms-rank{list-style:none;margin:0;padding:0;display:grid;gap:12px}
+.ms-bar-row{display:flex;justify-content:space-between;gap:10px;font-size:14px;margin-bottom:5px}
+.ms-bar{display:block;height:8px;border-radius:99px;background:rgba(255,255,255,.1);overflow:hidden}
+.ms-bar i{display:block;height:100%;border-radius:99px;background:linear-gradient(90deg,#f3a9cc,#8fd3ff)}
+.ms-zero{opacity:.55}
+.ms-note{margin:14px 0 0;color:var(--muted);font-size:13px}
+.ms-days{display:grid;grid-template-columns:repeat(14,minmax(0,1fr));gap:4px;align-items:end;height:190px}
+.ms-day{display:grid;grid-template-rows:16px 1fr 16px;justify-items:center;height:100%;min-width:0}
+.ms-day em{font-style:normal;font-size:10px;font-weight:800;color:#d8ccff}
+.ms-col{display:flex;align-items:flex-end;width:100%;max-width:22px;height:100%}
+.ms-col i{display:block;width:100%;border-radius:6px 6px 2px 2px;background:linear-gradient(180deg,#b9a7ff,#6b5bd6)}
+.ms-day.today .ms-col i{background:linear-gradient(180deg,#d7ff3a,#8fd35a)}
+.ms-day small{font-size:10px;color:var(--muted)}
+.ms-rank li{display:grid;grid-template-columns:28px minmax(0,1fr) auto;gap:12px;align-items:center}
+.ms-n{width:28px;height:28px;border-radius:50%;display:grid;place-items:center;font-size:12px;font-weight:900;background:rgba(185,167,255,.2)}
+.ms-rank-main{display:grid;gap:6px;min-width:0}
+.ms-rank-title{font-size:14px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.ms-rank b{color:#e8ffa0}
+.ms-actions{display:flex;flex-wrap:wrap;align-items:center;gap:12px;margin-top:20px}
+.ms-empty{padding:26px}
+@media(max-width:900px){.ms-grid{grid-template-columns:minmax(0,1fr)}}
+@media(max-width:620px){
+  .ms-tiles{grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+  .ms-tile{padding:14px}.ms-tile b{font-size:24px}.ms-tile.ms-top b{font-size:16px}
+  .ms-panel{padding:16px}
+  .ms-days{height:160px;gap:2px}
+  .ms-actions>.primary-button{width:100%}
+}
