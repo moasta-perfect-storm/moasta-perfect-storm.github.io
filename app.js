@@ -1331,7 +1331,9 @@ function renderTaskHistory() {
         });
       }
 
-      ((day.auto || [])[index] === true ? songRows : todoRows).push(row);
+      // The album task is ticked by hand, but it is a streaming task, so it sits under "Songs".
+      const isAlbumTask = /album top to bottom/i.test(String(task));
+      (isAuto || isAlbumTask ? songRows : todoRows).push(row);
     });
 
     [["Songs", songRows], ["To do", todoRows]].forEach(([title, rows]) => {
