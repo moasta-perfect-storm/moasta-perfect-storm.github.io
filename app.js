@@ -1087,11 +1087,11 @@ function renderListeningPanel() {
         <button type="button" class="source-btn ${isStats ? "active" : ""}" data-source="statsfm">stats.fm</button>
       </div>
       <form id="lastfmForm" class="lastfm-form">
-        <input id="lastfmInput" maxlength="30" required value="${escapeHtml(player?.listeningSource === src ? player.listeningName || "" : "")}" placeholder="${isStats ? "Your stats.fm username" : "Your Last.fm username"}" autocomplete="off">
+        <input id="lastfmInput" maxlength="30" required value="${escapeHtml(player?.listeningSource === src ? player.listeningName || "" : "")}" placeholder="${isStats ? "Your stats.fm Custom URL" : "Your Last.fm username"}" autocomplete="off">
         <button class="primary-button" type="submit">Connect <span>→</span></button>
       </form>
       <p class="fine-print">${isStats
-        ? "Use your stats.fm username (the name in stats.fm/yourname). In stats.fm → Settings → Privacy, your profile and recent streams must be public."
+        ? "Use your stats.fm Custom URL: the part after stats.fm/ (in stats.fm → Profile → Edit, the “Custom url” box). Do NOT use your Display Name. You can paste your whole stats.fm link too. In stats.fm → Settings → Privacy, your profile and recent streams must be public."
         : "You need a free Last.fm account with your streaming app connected (Last.fm → Settings → Applications). Under Settings → Privacy, \"Hide recent listening information\" must be off."}</p>
       <p class="fine-print">Pick whichever you already use. Both work the same, and splitting players between them keeps the load low.</p>
       <p id="lastfmMessage" class="form-message" role="status"></p>
@@ -1138,13 +1138,36 @@ function renderListeningPanel() {
   });
 }
 
+// stats.fm: accept a pasted link / @name, then ask stats.fm (through the Edge Function) whether it is a
+// real id / Custom URL with public streams BEFORE saving. Returns the id to save.
+function cleanStatsfmName(raw) {
+  let v = String(raw || "").trim();
+  v = v.replace(/^https?:\/\/(www\.)?stats\.fm\//i, "").replace(/^@/, "");
+  v = v.replace(/^user\//i, "").split(/[/?#]/)[0].trim();
+  return v;
+}
+
+let lastVerifiedStatsfm = null;
+async function verifyStatsfmName(raw) {
+  const name = cleanStatsfmName(raw);
+  const msg = $("lastfmMessage");
+  if (msg) msg.textContent = "Checking stats.fm…";
+  const { data, error } = await supabase.functions.invoke("check-listening", { body: { verifyStatsfm: name } });
+  if (error) throw new Error("Could not reach the listening checker. Try again in a minute.");
+  if (data?.status !== "ok") throw new Error(LISTENING_MESSAGES[data?.status] || LISTENING_MESSAGES.error);
+  lastVerifiedStatsfm = data.statsfm || null;
+  return data.statsfm?.username || name;
+}
+
 async function saveListeningAccount(source, username) {
   try {
+    lastVerifiedStatsfm = null;
+    if (source === "statsfm" && String(username || "").trim()) username = await verifyStatsfmName(username);
     const { data, error } = await supabase.rpc(source === "statsfm" ? "save_statsfm" : "save_lastfm", { p_username: username });
     if (error) throw error;
     player = convertPlayer(data.player);
     listeningCounted = null;
-    listeningNote = "";
+    listeningNote = lastVerifiedStatsfm?.displayName ? `Connected to ${lastVerifiedStatsfm.displayName} on stats.fm.` : "";
     changingListening = false;
     listeningFormSource = null;
     updatePlayerUI();
@@ -1162,7 +1185,7 @@ const LISTENING_MESSAGES = {
   lastfm_private: "Last.fm says your recent listening is hidden. Turn off “Hide recent listening information” in Last.fm → Settings → Privacy.",
   lastfm_user_not_found: "Last.fm could not find that username. Check the spelling with “Change”.",
   statsfm_private: "stats.fm says your profile or recent streams are private. Make them public in stats.fm → Settings → Privacy.",
-  statsfm_user_not_found: "stats.fm could not find that username. Check the spelling with “Change”.",
+  statsfm_user_not_found: "stats.fm could not find that account. Use your Custom URL (the part after stats.fm/), not your Display Name.",
   statsfm_unavailable: "stats.fm is not answering right now. Try again in a minute.",
   lastfm_unavailable: "Last.fm is not answering right now. Try again in a minute.",
   server_not_configured: "The listening checker is not set up yet (missing Last.fm key).",
@@ -1213,6 +1236,13 @@ async function checkListening({ manual = false, force = false } = {}) {
     if (data?.status === "ok") {
       listeningCounted = { plays: data.plays, distinct: data.distinct, counted: data.counted || [] };
       listeningNote = `Checked at ${new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}.`;
+      if (data.latest) {
+        const last = new Date(data.latest);
+        listeningNote += ` stats.fm's newest stream is from ${last.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}.`;
+        if (Date.now() - last.getTime() > 30 * 60 * 1000) {
+          listeningNote += " If you played something after that, stats.fm has not synced it yet. That is on stats.fm's side, so open the stats.fm app to check, or switch to Last.fm.";
+        }
+      }
       const fresh = await loadMyProfile();
       if (fresh) player = fresh;
       await loadSongHistory();
