@@ -1227,11 +1227,14 @@ async function checkListening({ manual = false, force = false } = {}) {
       listeningNote = `Checked at ${new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}.`;
       if (data.latest) {
         const last = new Date(data.latest);
-        listeningNote += ` stats.fm's newest stream is from ${last.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}.`;
+        const at = last.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+        const what = data.latestTrack ? `“${data.latestTrack}”${data.latestArtist ? ` by ${data.latestArtist}` : ""}` : "a song";
+        listeningNote += ` stats.fm's newest stream is ${what} at ${at}${data.latestTxt === false ? " (not a TXT song, so it is not listed below)" : ""}.`;
         if (Date.now() - last.getTime() > 30 * 60 * 1000) {
           listeningNote += " If you played something after that, stats.fm has not synced it yet. That is on stats.fm's side, so open the stats.fm app to check, or switch to Last.fm.";
         }
       }
+      if (typeof data.read === "number") listeningNote += ` Read ${data.read} plays from the last 3 days, ${data.readTxt} of them TXT.`;
       const fresh = await loadMyProfile();
       if (fresh) player = fresh;
       await loadSongHistory();
