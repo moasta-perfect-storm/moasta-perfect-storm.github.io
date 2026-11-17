@@ -1234,6 +1234,7 @@ async function checkListening({ manual = false, force = false } = {}) {
           listeningNote += " If you played something after that, stats.fm has not synced it yet. That is on stats.fm's side, so open the stats.fm app to check, or switch to Last.fm.";
         }
       }
+      if (data.statsfmSample) listeningNote += ` stats.fm sent a stream in a format I cannot read yet, please send this to the developer: ${data.statsfmSample}`;
       if (typeof data.read === "number") listeningNote += ` Read ${data.read} plays from the last 3 days, ${data.readTxt} of them TXT.`;
       const fresh = await loadMyProfile();
       if (fresh) player = fresh;
