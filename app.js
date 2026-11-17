@@ -1063,15 +1063,6 @@ let lastListeningCheck = 0;
 let changingListening = false;
 let listeningFormSource = null;
 
-// Is there any listening task from the last 3 days that is still unfinished?
-function hasOpenListeningTask() {
-  const recent = [0, 1, 2].map(i => kstDateKey(new Date(Date.now() - i * 86400000)));
-  return (player?.taskHistory || []).some(day =>
-    recent.includes(day.date) &&
-    (day.auto || []).some((isAuto, i) => isAuto && !(day.completed || []).includes(i))
-  );
-}
-
 function renderListeningPanel() {
   const host = $("listeningPanel");
   if (!host) return;
@@ -1118,7 +1109,7 @@ function renderListeningPanel() {
       <div>
         <p class="eyebrow">LISTENING TASKS</p>
         <h3>${player.listeningSource === "statsfm" ? "stats.fm" : "Last.fm"}: <b>${escapeHtml(player.listeningName)}</b><span class="mp-chip" title="Moasta points">${player.mp || 0} moasta points</span></h3>
-        <p class="muted" id="listeningNote">${escapeHtml(listeningNote || "Songs you play after rolling are counted automatically.")}</p>
+        <p class="muted" id="listeningNote">${escapeHtml(listeningNote || "Every TXT song you play is counted automatically, all day.")}</p>
       </div>
       <div class="listening-actions">
         <button id="checkListeningButton" class="secondary-button" type="button">Check my listening</button>
@@ -1181,7 +1172,7 @@ async function saveListeningAccount(source, username) {
 
 const LISTENING_MESSAGES = {
   not_connected: "Connect your Last.fm account to start counting.",
-  no_roll: "Roll the dice first. Only songs played after your roll count.",
+  no_roll: "Roll the dice to start your tasklist.",
   lastfm_private: "Last.fm says your recent listening is hidden. Turn off “Hide recent listening information” in Last.fm → Settings → Privacy.",
   lastfm_user_not_found: "Last.fm could not find that username. Check the spelling with “Change”.",
   statsfm_private: "stats.fm says your profile or recent streams are private. Make them public in stats.fm → Settings → Privacy.",
@@ -1222,8 +1213,6 @@ async function checkListening({ manual = false, force = false } = {}) {
   if (manual && !force) {
     try { localStorage.setItem(COOLDOWN_KEY, String(Date.now())); } catch (_) {}
   }
-
-  if (!manual && !hasOpenListeningTask()) return;
 
   listeningChecking = true;
   lastListeningCheck = Date.now();
@@ -1442,7 +1431,7 @@ async function loadSongHistory() {
       .from("listening_history")
       .select("track, artist, played_at")
       .order("played_at", { ascending: false })
-      .limit(20);
+      .limit(100);
 
     if (error) throw error;
     songHistory = data || [];
@@ -1467,14 +1456,22 @@ function formatPlayedAt(value) {
     : `${d.toLocaleDateString([], { day: "numeric", month: "short" })} ${time}`;
 }
 
+let songHistoryPage = 0;
+const SONGS_PER_PAGE = 10;
+
 function renderSongHistory() {
   const host = $("songHistory");
   if (!host) return;
 
-  const list = songHistory.length
-    ? `<ol class="song-list">${songHistory.map((song, i) => `
+  const pages = Math.max(1, Math.ceil(songHistory.length / SONGS_PER_PAGE));
+  songHistoryPage = Math.min(Math.max(0, songHistoryPage), pages - 1);
+  const start = songHistoryPage * SONGS_PER_PAGE;
+  const shown = songHistory.slice(start, start + SONGS_PER_PAGE);
+
+  const list = shown.length
+    ? `<ol class="song-list">${shown.map((song, i) => `
         <li>
-          <span class="song-n">${i + 1}</span>
+          <span class="song-n">${start + i + 1}</span>
           <span class="song-meta">
             <span class="song-title">${escapeHtml(song.track)}</span>
             <span class="song-artist">${escapeHtml(song.artist || "")}</span>
@@ -1484,15 +1481,25 @@ function renderSongHistory() {
     : `<p class="muted">${!player?.listeningName
         ? "Connect Last.fm or stats.fm to see the songs you have played here."
         : songHistoryLoaded
-          ? "No counted songs yet. Play a song from your tasklist, then press “Check my listening”."
+          ? "No TXT songs yet. Play a TXT song, then press “Check my listening”."
           : "Loading…"}</p>`;
+
+  const pager = songHistory.length > SONGS_PER_PAGE ? `
+    <div class="song-pager">
+      <button id="songPrev" class="nav-link" type="button" ${songHistoryPage === 0 ? "disabled" : ""}>← Newer</button>
+      <span>Page ${songHistoryPage + 1} of ${pages}</span>
+      <button id="songNext" class="nav-link" type="button" ${songHistoryPage >= pages - 1 ? "disabled" : ""}>Older →</button>
+    </div>` : "";
 
   host.innerHTML = `
     <p class="eyebrow">LISTENING HISTORY</p>
-    <h3>Last 20 songs played</h3>
-    <p class="muted">Songs that counted for your tasks, newest first.</p>
+    <h3>Your last ${songHistory.length >= 100 ? 100 : "TXT"} songs</h3>
+    <p class="muted">Every TXT song you played, newest first (the latest 100, 10 per page). It does not depend on your tasks or your roll.</p>
     ${list}
+    ${pager}
   `;
+  $("songPrev")?.addEventListener("click", () => { songHistoryPage -= 1; renderSongHistory(); });
+  $("songNext")?.addEventListener("click", () => { songHistoryPage += 1; renderSongHistory(); });
 }
 
 function renderLeaderboard() {
@@ -2133,6 +2140,7 @@ supabase.auth.onAuthStateChange((event, session) => {
 
     player = null;
     songHistory = [];
+    songHistoryPage = 0;
     songHistoryLoaded = false;
     loadedUserId = null;
     hasEntered = false;
