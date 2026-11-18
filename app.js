@@ -1248,12 +1248,27 @@ document.addEventListener("visibilitychange", () => {
 setInterval(() => {
   if (document.visibilityState === "visible" && !$("tasksView")?.classList.contains("hidden")) checkListening();
 }, AUTO_CHECK_MS);
+// New KST day: clear yesterday's list from the page without a reload.
+setInterval(() => {
+  if (renderedTaskDay && renderedTaskDay !== kstDateKey()) renderTaskHistory();
+}, 30000);
+document.addEventListener("visibilitychange", () => {
+  if (document.visibilityState === "visible" && renderedTaskDay && renderedTaskDay !== kstDateKey()) renderTaskHistory();
+});
 setInterval(() => {
   if (document.visibilityState === "visible" && !$("leaderboardView")?.classList.contains("hidden")) loadStreamStats();
 }, 60000);
 
+// The Tasklists page only shows TODAY's tasks (KST). When the day ends, yesterday's list disappears
+// from the page. The rows stay in the database on purpose: moasta points are worked out from them.
+let renderedTaskDay = null;
+
 function renderTaskHistory() {
+  const today = kstDateKey();
+  renderedTaskDay = today;
+
   const history = [...(player?.taskHistory || [])]
+    .filter(day => day.date === today)
     .sort((a, b) => b.date.localeCompare(a.date));
 
   const host = $("taskHistory");
@@ -1262,10 +1277,12 @@ function renderTaskHistory() {
   if (!history.length) {
     host.innerHTML = `
       <div class="panel task-empty">
-        <h3>No tasklists yet</h3>
-        <p class="muted">Roll the dice to receive your first daily quest list.</p>
+        <h3>You haven't rolled yet</h3>
+        <p class="muted">Roll the dice to get today's tasks. Your list resets every day at midnight KST.</p>
+        <button type="button" class="primary-button" id="goRollButton">Go to the game <span>→</span></button>
       </div>
     `;
+    $("goRollButton").addEventListener("click", () => showView("gameView"));
     return;
   }
 
