@@ -194,7 +194,7 @@
       </section>
 
       <section id="friendsView" class="app-view hidden">
-        <div class="section-heading"><p class="eyebrow">YOUR CREW</p><h1>Friends <span class="sparkle">✦</span></h1><p class="muted">Add other players by username to follow their progress. They have to accept your request first.</p></div>
+        <div class="section-heading"><p class="eyebrow">YOUR CREW</p><h1>Friends <span class="sparkle">✦</span></h1><p class="muted">Tap a player on the leaderboard to add them, share your invite link, or type a username. They have to accept your request first.</p></div>
         <div class="friends-layout">
           <section class="panel friends-add">
             <p class="eyebrow">ADD A FRIEND</p>
@@ -203,6 +203,8 @@
               <button class="primary-button" type="submit">Send request</button>
             </form>
             <p id="friendMessage" class="form-message" role="status"></p>
+            <button id="friendInvite" class="secondary-button friend-invite" type="button">🔗 Share my invite link</button>
+            <p class="muted friend-hint">Friends who open your link send you a request automatically.</p>
             <div id="friendRequests"></div>
           </section>
           <section class="panel friends-list-panel">
