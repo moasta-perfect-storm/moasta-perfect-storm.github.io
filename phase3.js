@@ -102,16 +102,25 @@ async function renderShopExtras() {
     </article>`;
   }).join("");
 
+  // boxes sorted by their pull odds: the lowest-tier boxes first, the best odds of rare stuff last
+  const RANK = { common: 0, rare: 1, epic: 2, legendary: 3 };
+  const oddsScore = (o) => { let t = 0, s = 0; for (const [r, w] of Object.entries(o || {})) { t += +w; s += (+w) * (RANK[r] ?? 0); } return t ? s / t : 0; };
+  boxes = [...boxes].sort((a, b) => oddsScore(a.odds) - oddsScore(b.odds) || a.price - b.price);
+
   const boxCards = boxes.map((b) => {
-    const odds = Object.entries(b.odds || {}).map(([r, w]) => `<li class="rarity-${esc(r)}"><span>${esc(RARITY[r] || r)}</span><b>${esc(w)}%</b></li>`).join("");
-    const can = balance >= b.price;
+    const odds = Object.entries(b.odds || {}).sort((x, y) => (RANK[y[0]] ?? 0) - (RANK[x[0]] ?? 0))
+      .map(([r, w]) => `<li class="rarity-${esc(r)}"><span>${esc(RARITY[r] || r)}</span><b>${esc(w)}%</b></li>`).join("");
+    const limited = b.daily_limit != null;
+    const left = limited ? Math.max(0, b.daily_limit - (b.opened_today || 0)) : 1;
+    const can = balance >= b.price && left > 0;
     return `<article class="p3-box">
       <div class="p3-box-art" aria-hidden="true">🎁</div>
       <strong>${esc(b.name)}</strong>
       <span class="p3-sub">A shop item you do not own yet, never a duplicate.</span>
       <ul class="p3-odds">${odds}</ul>
-      <button type="button" class="primary-button p3-open-box" data-box="${esc(b.id)}" ${can ? "" : "disabled"}>Open · ${fmt(b.price)} MP</button>
-      ${can ? "" : `<span class="p3-sub">You have ${fmt(balance)} MP</span>`}
+      <button type="button" class="primary-button p3-open-box" data-box="${esc(b.id)}" ${can ? "" : "disabled"}>${left > 0 ? `Open · ${fmt(b.price)} MP` : "Opened today ✓"}</button>
+      ${limited ? `<span class="p3-sub">Limit: ${esc(b.daily_limit)} per day</span>` : ""}
+      ${left > 0 && balance < b.price ? `<span class="p3-sub">You have ${fmt(balance)} MP</span>` : ""}
     </article>`;
   }).join("");
 

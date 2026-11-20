@@ -327,6 +327,7 @@ async function loadChest({ nudge = false } = {}) {
     state.chest = await rpc("chest_status");
     card.classList.remove("hidden");
     renderChest();
+    loadChestHistory();
     if (nudge && state.chest.available) {
       const key = `psChestNudge:${state.chest.date}`;
       let seen = false; try { seen = !!sessionStorage.getItem(key); sessionStorage.setItem(key, "1"); } catch (_) { /* ignore */ }
@@ -341,6 +342,31 @@ async function loadChest({ nudge = false } = {}) {
 function rewardText(r) {
   if (!r) return "";
   return r.type === "roll" ? "🎲 A bonus roll!" : `+${r.mp} MP`;
+}
+
+async function loadChestHistory() {
+  const panel = $("chestHistoryPanel"), host = $("chestHistory"); if (!panel || !host) return;
+  if (state.missing.has("chest_history")) { host.innerHTML = `<p class="muted">Chest history is not switched on yet. Run supabase-update-chests-v29.sql in Supabase.</p>`; return; }
+  try {
+    const d = await rpc("chest_history");
+    const items = d.items || [];
+    $("chestHistCount").textContent = items.length ? `· ${items.length}` : "";
+    if (!items.length) { host.innerHTML = `<p class="muted">No chests opened yet. Your pulls will show up here.</p>`; return; }
+    const tiles = items.map((c) => {
+      const r = c.reward || {};
+      const date = new Date(`${c.day}T00:00:00`).toLocaleDateString(undefined, { day: "numeric", month: "short" });
+      const year = new Date(`${c.day}T00:00:00`).toLocaleDateString(undefined, { year: "numeric" });
+      const text = r.type === "roll" ? "Bonus roll" : `+${r.mp} MP`;
+      return `<div class="chest-tile tier-${esc(r.tier || "common")}" title="${esc(c.day)}">
+        <span class="ct-ico">${r.type === "roll" ? "🎲" : "🎁"}</span>
+        <b class="ct-pull">${esc(text)}</b>
+        <small class="ct-date">${esc(date)} ${esc(year)}</small>
+      </div>`;
+    }).join("");
+    host.innerHTML = `<p class="muted chest-hist-sum">${d.count} opened · ${Number(d.total_mp || 0).toLocaleString()} MP${d.rolls ? ` · ${d.rolls} bonus roll${d.rolls > 1 ? "s" : ""}` : ""}</p><div class="chest-hist-grid">${tiles}</div>`;
+  } catch (err) {
+    host.innerHTML = `<p class="muted">${esc(state.missing.has("chest_history") ? "Chest history is not switched on yet. Run supabase-update-chests-v29.sql in Supabase." : (err.message || "Could not load your chests."))}</p>`;
+  }
 }
 
 function chestDots() {
@@ -376,6 +402,7 @@ async function openChest() {
       toast(`🎁 Daily chest: ${rewardText(res.reward)}`, { kind: "mp", ms: 5000 });
       if (res.reward?.tier === "epic" || res.reward?.tier === "rare") ctx.confetti?.();
       renderChest();
+      loadChestHistory();
       await ctx.refreshPlayer?.();
     } else {
       await loadChest({});
