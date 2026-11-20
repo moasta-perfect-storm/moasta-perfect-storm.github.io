@@ -267,8 +267,31 @@ export const BOARD_FINISH_MP = { 100: 25, 200: 50, 300: 75 };
 // Plays once per visit. Players can skip it.
 // ==========================================================================
 export const INTRO_LOGOS = [
-  // "./assets/logos/logo-1.png",
-  // "./assets/logos/logo-2.png",
+  "./assets/logos/logo-01.webp",
+  "./assets/logos/logo-02.webp",
+  "./assets/logos/logo-03.webp",
+  "./assets/logos/logo-04.webp",
+  "./assets/logos/logo-05.webp",
+  "./assets/logos/logo-06.webp",
+  "./assets/logos/logo-07.webp",
+  "./assets/logos/logo-08.webp",
+  "./assets/logos/logo-09.webp",
+  "./assets/logos/logo-10.webp",
+  "./assets/logos/logo-11.webp",
+  "./assets/logos/logo-12.webp",
+  "./assets/logos/logo-13.webp",
+  "./assets/logos/logo-14.webp",
+  "./assets/logos/logo-15.webp",
+  "./assets/logos/logo-16.webp",
+  "./assets/logos/logo-17.webp",
+  "./assets/logos/logo-18.webp",
+  "./assets/logos/logo-19.webp",
+  "./assets/logos/logo-20.webp",
+  "./assets/logos/logo-21.webp",
+  "./assets/logos/logo-22.webp",
+  "./assets/logos/logo-23.webp",
+  "./assets/logos/logo-24.webp",
+  "./assets/logos/logo-25.webp"
 ];
 export const INTRO_WORDMARK = "";
 export const INTRO_TEXT = "TXT";

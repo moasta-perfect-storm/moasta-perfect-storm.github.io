@@ -1,4 +1,4 @@
-# TXT Perfect Storm — Daily Quest
+# Beat The Angel Bite - by Moastation — Daily Quest
 
 A multiplayer, TXT-inspired Snakes & Ladders daily quest game: plain HTML/CSS/JS on the front, **Supabase** (Auth, Postgres, Realtime, RPC) on the back.
 Fan-made, unofficial. Not affiliated with BIGHIT MUSIC or TXT.
@@ -223,7 +223,7 @@ The website files (`phase3.js`, plus small changes in `app.js`, `extras.js`, `in
 Until the SQL is run, each new feature just shows a short "not switched on yet" note.
 
 - **Era sets** (Shop page): 5 sets built from existing shop items. Own every piece → claim a one-off bonus (15% of the set price).
-- **Mystery boxes** (Shop page): Rain 800 / Thunder 1,700 / Perfect Storm 3,200 MP. Always an item you do not own, odds shown on the box, never charged when nothing is left to win.
+- **Mystery boxes** (Shop page): Rain 800 / Thunder 1,700 / Beat The Angel Bite 3,200 MP. Always an item you do not own, odds shown on the box, never charged when nothing is left to win.
 - **Cheers** (Friends page): free, 5 a day, one per friend per day, friends only.
 - **Emotes**: pick one on the Friends or Studio page; friends see it next to your name and it can appear in Studio photos.
 - **Studio frames**: Polaroid, Stage lights, Storm, Neon.
@@ -233,3 +233,7 @@ Until the SQL is run, each new feature just shows a short "not switched on yet" 
   Change the Song of the Day with `update public.daily_songs set title = '…', song_key = '…' where day = '…';`.
 
 Also included: **`txt-perfect-storm-update-v16.sql`** (new Roll A / Roll B task rules). Run it if you have not yet.
+
+### Intro logos
+The 25 MOA Station logos live in `assets/logos/` (192×192 tiles, 112 KB in total) and are listed in `INTRO_LOGOS` in `game-config.js`.
+Add or remove a logo by editing that list. The intro cycles through them to build the letters in `INTRO_TEXT` (currently "TXT").

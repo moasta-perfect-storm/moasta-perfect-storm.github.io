@@ -233,7 +233,7 @@ function frameSvg(frame, name) {
     case "polaroid":
       return `<path d="M0 0H320V320H0Z M14 14H306V268H14Z" fill="#FBFAF6" fill-rule="evenodd"/>
         <path d="M14 14H306V268H14Z" fill="none" stroke="#000" stroke-opacity=".12" stroke-width="2"/>
-        <text x="160" y="299" text-anchor="middle" font-family="Nunito, Arial, sans-serif" font-size="19" font-weight="800" fill="#3B3556">${esc(name)} · Perfect Storm</text>`;
+        <text x="160" y="299" text-anchor="middle" font-family="Nunito, Arial, sans-serif" font-size="16" font-weight="800" fill="#3B3556">${esc(name)} · Beat The Angel Bite</text>`;
     case "stage":
       return `<defs><linearGradient id="p3b" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#FFFFFF" stop-opacity=".6"/><stop offset="1" stop-color="#FFFFFF" stop-opacity="0"/></linearGradient></defs>
         <polygon points="30,0 72,0 132,320 -22,320" fill="url(#p3b)"/>
@@ -381,7 +381,7 @@ function recapSvg(r) {
       <linearGradient id="bar" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#D7FF3A"/><stop offset="1" stop-color="#7A6BFF"/></linearGradient>
     </defs>
     <rect width="1080" height="1350" fill="url(#bgc)"/>
-    <text x="540" y="104" font-size="30" font-weight="800" fill="#D7FF3A" text-anchor="middle" letter-spacing="6">PERFECT STORM · MY WEEK</text>
+    <text x="540" y="104" font-size="30" font-weight="800" fill="#D7FF3A" text-anchor="middle" letter-spacing="6">BEAT THE ANGEL BITE · MY WEEK</text>
     <text x="540" y="150" font-size="28" font-weight="700" fill="#fff" fill-opacity=".75" text-anchor="middle">${xml(rangeLabel(r), 40)}</text>
     <image href="${avatar}" x="390" y="180" width="300" height="300"/>
     <text x="540" y="512" font-size="40" font-weight="900" fill="#fff" text-anchor="middle">${xml(p.name, 22)}</text>
@@ -391,7 +391,7 @@ function recapSvg(r) {
     ${bars}
     <text x="110" y="1090" font-size="30" font-weight="800" fill="#D7FF3A" letter-spacing="4">TOP SONGS</text>
     ${tops}
-    <text x="540" y="1310" font-size="24" font-weight="700" fill="#fff" fill-opacity=".5" text-anchor="middle">TXT Perfect Storm · fan-made</text>
+    <text x="540" y="1310" font-size="24" font-weight="700" fill="#fff" fill-opacity=".5" text-anchor="middle">Beat The Angel Bite - by Moastation · fan-made</text>
   </svg>`;
 }
 async function svgToPng(svg, w, h) {

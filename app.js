@@ -898,7 +898,7 @@ function streamsCardSvg() {
     <rect width="1080" height="1350" rx="64" fill="url(#bgc)"/>
     <circle cx="930" cy="180" r="260" fill="#B9A7FF" fill-opacity=".12"/>
     <circle cx="120" cy="1180" r="300" fill="#8FD3FF" fill-opacity=".08"/>
-    <text x="540" y="110" font-size="30" font-weight="800" fill="#F3A9CC" text-anchor="middle" letter-spacing="8">PERFECT STORM · MY STREAMS</text>
+    <text x="540" y="110" font-size="30" font-weight="800" fill="#F3A9CC" text-anchor="middle" letter-spacing="8">BEAT THE ANGEL BITE · MY STREAMS</text>
     <image x="380" y="140" width="320" height="320" href="${avatar}" xlink:href="${avatar}"/>
     <text x="540" y="520" font-size="54" font-weight="900" fill="#fff" text-anchor="middle">${xmlText(player.name || "MOA", 22)}</text>
     <text x="540" y="650" font-size="150" font-weight="900" fill="#D7FF3A" text-anchor="middle">${fmt(m.total)}</text>
@@ -906,7 +906,7 @@ function streamsCardSvg() {
     ${rows}
     <text x="540" y="1098" font-size="30" font-weight="800" fill="#fff" fill-opacity=".8" text-anchor="middle">${xmlText(ALBUM_NAME, 30)} · ${m.albumPlayed}/${ALBUM_TRACKS.length} songs</text>
     ${albumDots}
-    <text x="540" y="1275" font-size="26" font-weight="700" fill="#fff" fill-opacity=".5" text-anchor="middle">fan-made TXT Perfect Storm game</text>
+    <text x="540" y="1275" font-size="26" font-weight="700" fill="#fff" fill-opacity=".5" text-anchor="middle">fan-made · Beat The Angel Bite - by Moastation</text>
   </svg>`;
 }
 async function downloadStreamsCard() {
