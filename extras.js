@@ -165,6 +165,7 @@ export function onViewShown(viewId) {
   phase3.onViewShown(viewId);
   if (viewId === "friendsView") loadFriends();
   if (viewId === "badgesView") refreshBadges({ quiet: true });
+  if (viewId === "chestView") loadChest({});
   if (viewId === "leaderboardView") loadLeaderboardBadges();
 }
 
@@ -329,7 +330,7 @@ async function loadChest({ nudge = false } = {}) {
     if (nudge && state.chest.available) {
       const key = `psChestNudge:${state.chest.date}`;
       let seen = false; try { seen = !!sessionStorage.getItem(key); sessionStorage.setItem(key, "1"); } catch (_) { /* ignore */ }
-      if (!seen) toast("🎁 Your daily chest is ready!", { kind: "mp" });
+      if (!seen) toast("🎁 Your daily chest is ready! Open it from More → Daily chest.", { kind: "mp", ms: 6000 });
     }
   } catch (err) {
     console.warn("Chest:", err.message);
@@ -342,8 +343,16 @@ function rewardText(r) {
   return r.type === "roll" ? "🎲 A bonus roll!" : `+${r.mp} MP`;
 }
 
+function chestDots() {
+  const on = !!state.chest?.available;
+  $("chestDot")?.classList.toggle("hidden", !on);
+  const req = (state.friends?.incoming || []).length > 0;
+  $("moreDot")?.classList.toggle("hidden", !(on || req));
+}
+
 function renderChest() {
   const card = $("chestCard"); if (!card || !state.chest) return;
+  chestDots();
   card.classList.remove("opening");
   const reward = state.chestReward
     ? `<div class="chest-reward ${state.chestReward.tier === "epic" ? "epic" : ""}">${esc(rewardText(state.chestReward))}</div>` : "";
@@ -389,6 +398,7 @@ async function loadFriends({ quiet = false } = {}) {
     if (state.friends && incoming > (state.friends.incoming || []).length && quiet) { /* new request: the notification toast covers it */ }
     state.friends = data;
     $("friendsDot")?.classList.toggle("hidden", incoming === 0);
+    chestDots();
     state.sent = new Set();
     renderFriends();
     ctx.renderLeaderboard?.();
