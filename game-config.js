@@ -253,3 +253,32 @@ export const CHIBI_ITEMS = [
 // ==========================================================================
 export const CHECKPOINT_MP = 10;
 export const BOARD_FINISH_MP = { 100: 25, 200: 50, 300: 75 };
+
+
+// ==========================================================================
+// WEBSITE INTRO ANIMATION  (logos slide in and form "TXT" in the middle)
+// --------------------------------------------------------------------------
+// This never needs to change with a comeback: it only uses the logos listed here.
+//  * INTRO_LOGOS    put your logo images in assets/logos/ (transparent PNG / SVG look best)
+//                   and list them here. With an empty list the main logo is used.
+//  * INTRO_WORDMARK optional: an image of the TXT wordmark. The logos form the letters first,
+//                   then fade into this image. Leave "" to end on the letters themselves.
+//  * INTRO_TEXT     the letters the logos spell out.
+// Plays once per visit. Players can skip it.
+// ==========================================================================
+export const INTRO_LOGOS = [
+  // "./assets/logos/logo-1.png",
+  // "./assets/logos/logo-2.png",
+];
+export const INTRO_WORDMARK = "";
+export const INTRO_TEXT = "TXT";
+export const INTRO_FALLBACK_LOGO = "./assets/logo.jpg";
+
+
+// Special tiles (global tile numbers). The quiz / Song-of-the-Day rules live in the phase-3 SQL
+// (special_tiles table). Keep these two lists in sync with that table.
+// They sit on free squares: no storm, ladder, gift or checkpoint.
+export const SPECIAL_TILES = {
+  quiz: [14, 29, 57, 84, 114, 134, 157, 184, 214, 248, 284],
+  song: [10, 35, 64, 110, 135, 164, 210, 235, 291]
+};

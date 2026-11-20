@@ -4,8 +4,14 @@ import {
   BOARDS, BOARD_SIZE, BOARD_COUNT, TOTAL_TILES, BADGES, CHIBI_ITEMS,
   SEASON_START_DATE, BACKGROUND_COUNT,
   AUTH_EMAIL_DOMAIN, TASK_MP, ROLLS_PER_DAY, ALBUM_NAME, ALBUM_TRACKS,
-  CHECKPOINT_MP, BOARD_FINISH_MP
+  CHECKPOINT_MP, BOARD_FINISH_MP, SPECIAL_TILES,
+  INTRO_LOGOS, INTRO_WORDMARK, INTRO_TEXT, INTRO_FALLBACK_LOGO
 } from "./game-config.js";
+import * as extras from "./extras.js";
+import { playIntro } from "./intro.js";
+
+// Intro: the logos slide in and form "TXT" (see game-config.js to change the logos)
+playIntro({ logos: INTRO_LOGOS, fallback: INTRO_FALLBACK_LOGO, wordmark: INTRO_WORDMARK, text: INTRO_TEXT });
 
 const $ = (id) => document.getElementById(id);
 const screens = ["tutorialScreen", "authScreen", "profileScreen", "appScreen"];
@@ -29,6 +35,22 @@ let selectedAvatarState = {
 };
 let authMode = "signup";
 let rolling = false;
+
+extras.init({
+  getPlayer: () => player,
+  showView: (id) => showView(id),
+  avatarDataUri: (value, seed) => avatarDataUri(value, seed),
+  mpBalance: () => mpBalance(),
+  kstDateKey: () => kstDateKey(),
+  confetti: () => launchConfetti(),
+  svgToDataUri: (svg) => svgToDataUri(svg),
+  avatarSvgText: (value, seed, bg) => avatarSvgText(value, seed, bg),
+  renderLeaderboard: () => renderLeaderboard(),
+  refreshPlayer: async () => {
+    const fresh = await loadMyProfile();
+    if (fresh) { player = fresh; updatePlayerUI(); }
+  }
+});
 
 // ---- three boards ------------------------------------------------------------------
 let viewBoard = 0;            // which board is shown (0-2)
@@ -123,6 +145,10 @@ function showView(viewId) {
   document.querySelectorAll(".nav-link").forEach(button =>
     button.classList.toggle("active", button.dataset.view === viewId)
   );
+  // the "More" tab lights up when one of its pages is open
+  $("moreToggle")?.classList.toggle("active", !!$("moreMenu")?.querySelector(".nav-link.active"));
+  extras.onViewShown(viewId);
+  window.scrollTo({ top: 0 });
 
   // Opening the Tasklists page checks Last.fm for new TXT plays.
   if (viewId === "leaderboardView") loadStreamStats();
@@ -321,7 +347,11 @@ function renderBoard() {
       : isLadder
         ? `<img class="board-event-art ladder-art" src="./assets/board/ladder.png" alt="Ladder" draggable="false">`
         : "";
-    const symbol = isMilestone ? "✦" : isGift ? "🎁" : "";
+    const isQuiz = SPECIAL_TILES.quiz.includes(number);
+    const isSong = SPECIAL_TILES.song.includes(number);
+    if (isQuiz) tile.classList.add("special", "quiz");
+    if (isSong) tile.classList.add("special", "song");
+    const symbol = isMilestone ? "✦" : isGift ? "🎁" : isQuiz ? "❓" : isSong ? "🎵" : "";
 
     tile.innerHTML = `
       <span class="tile-number">${number}</span>
@@ -360,14 +390,6 @@ function updatePlayerUI() {
     <img class="chibi-image profile-chibi" src="${escapeHtml(avatarDataUri(player.avatar, player.uid))}" alt="">
     <span>${escapeHtml(player.name)}</span>${badgeHtml(player.position)}
   `;
-
-  $("topUser").innerHTML = `
-    <button id="logoutButton" class="nav-link">Log out</button>
-  `;
-
-  $("logoutButton").addEventListener("click", async () => {
-    await supabase.auth.signOut();
-  });
 
   $("currentPosition").textContent = player.position ?? 1;
   $("statPosition").textContent = `${player.position ?? 1} / ${TOTAL_TILES}`;
@@ -412,6 +434,7 @@ function updatePlayerUI() {
   renderTaskHistory();
   renderSongHistory();
   if (!$("shopView").classList.contains("hidden")) renderShop();
+  extras.onPlayerUpdate(player);
 }
 
 const CHIBI_OPTIONS = {
@@ -597,7 +620,8 @@ function updateWardrobeBadge() {
   if (!nav || !player) return;
   const seen = seenUnlocks();
   const fresh = (player.unlocks || []).filter(id => !seen.has(id)).length;
-  nav.textContent = fresh ? `Wardrobe ● ${fresh} new` : "Wardrobe";
+  const label = nav.querySelector(".nav-txt");
+  if (label) label.textContent = fresh ? `Wardrobe ● ${fresh} new` : "Wardrobe";
 }
 function renderWardrobe() {
   if (!player) return;
@@ -623,7 +647,7 @@ async function saveWardrobe() {
 let studioBg = "stage";
 const STUDIO_PNG_SIZE = 1024;
 
-function avatarSvgText(value, seed, bg) {
+function avatarSvgText(value, seed, bg, decorate = false) {
   const uri = avatarDataUri(value, seed);
   let svg = decodeURIComponent(uri.slice(uri.indexOf(",") + 1));
   const base = `<rect width="320" height="320" rx="42" fill="url(#bg)"/><circle cx="160" cy="151" r="122" fill="#FFFFFF" opacity=".35"/>`;
@@ -634,7 +658,9 @@ function avatarSvgText(value, seed, bg) {
     svg = svg.replace(base, stage);
   }
   // explicit size so every browser rasterises the SVG at the same resolution
-  return svg.replace("<svg ", `<svg width="${STUDIO_PNG_SIZE}" height="${STUDIO_PNG_SIZE}" `);
+  svg = svg.replace("<svg ", `<svg width="${STUDIO_PNG_SIZE}" height="${STUDIO_PNG_SIZE}" `);
+  // phase3.js adds the Studio frame and emote bubble (only for Studio pictures)
+  return decorate && window.txtStudioDecorate ? window.txtStudioDecorate(svg) : svg;
 }
 function svgToDataUri(svg) { return `data:image/svg+xml;charset=UTF-8,${encodeURIComponent(svg)}`; }
 
@@ -642,9 +668,9 @@ function renderStudio() {
   if (!player) return;
   $("studioMessage").textContent = "";
   $("studioStage").dataset.bg = studioBg;
-  $("studioImage").src = svgToDataUri(avatarSvgText(player.avatar, player.uid, studioBg));
+  $("studioImage").src = svgToDataUri(avatarSvgText(player.avatar, player.uid, studioBg, true));
   $("studioName").textContent = player.name || "Player";
-  document.querySelectorAll(".studio-bg").forEach(b => {
+  document.querySelectorAll(".studio-bg[data-bg]").forEach(b => {
     const on = b.dataset.bg === studioBg;
     b.classList.toggle("active", on);
     b.setAttribute("aria-checked", String(on));
@@ -670,7 +696,7 @@ async function downloadStudioPng() {
   const msg = $("studioMessage");
   try {
     studioShutter();
-    const svg = avatarSvgText(player.avatar, player.uid, studioBg);
+    const svg = avatarSvgText(player.avatar, player.uid, studioBg, true);
     const img = new Image();
     img.decoding = "async";
     await new Promise((resolve, reject) => { img.onload = resolve; img.onerror = () => reject(new Error("Could not draw your chibi.")); img.src = svgToDataUri(svg); });
@@ -688,13 +714,13 @@ async function downloadStudioPng() {
 function downloadStudioSvg() {
   if (!player) return;
   studioShutter();
-  saveBlob(new Blob([avatarSvgText(player.avatar, player.uid, studioBg)], { type: "image/svg+xml" }), studioFileName("svg"));
+  saveBlob(new Blob([avatarSvgText(player.avatar, player.uid, studioBg, true)], { type: "image/svg+xml" }), studioFileName("svg"));
   $("studioMessage").textContent = "Saved! Check your downloads.";
 }
 $("studioPng").addEventListener("click", downloadStudioPng);
 $("studioSvg").addEventListener("click", downloadStudioSvg);
 $("studioBgOptions").addEventListener("click", event => {
-  const b = event.target.closest(".studio-bg");
+  const b = event.target.closest(".studio-bg[data-bg]");
   if (!b) return;
   studioBg = b.dataset.bg;
   renderStudio();
@@ -911,7 +937,8 @@ const SLOT_LABEL = { style: "Hairstyle", outfit: "Outfit", accessory: "Accessory
 function mpBalance() { return Math.max(0, (player?.mp || 0) - (player?.mpSpent || 0)); }
 function updateShopNav() {
   const nav = $("shopNav");
-  if (nav && player) nav.textContent = `Shop · ${mpBalance()} MP`;
+  // the MP balance now lives in the 💰 chip in the top bar (extras.onPlayerUpdate)
+  if (nav && player) nav.title = `Shop · ${mpBalance()} MP`;
 }
 
 function renderShop() {
@@ -1536,7 +1563,7 @@ function renderLeaderboard() {
         <span class="leader-rank">${i + 1}</span>
         <img class="chibi-image leader-chibi" src="${escapeHtml(avatarDataUri(p.avatar, p.uid))}" alt="">
         <span class="leader-name">
-          ${escapeHtml(p.name || "Player")}${p.uid === currentUser?.id ? " (you)" : ""}${badgeHtml(p.position)}
+          ${escapeHtml(p.name || "Player")}${p.uid === currentUser?.id ? " (you)" : ""}${badgeHtml(p.position)}${extras.badgeIcons(p.uid)}
         </span>
       </div>
       <span class="leader-milestone">
@@ -1887,6 +1914,7 @@ function routeSignedIn() {
 
   showScreen("appScreen");
   $("mainNav").classList.remove("hidden");
+  extras.onSignedIn();
   updatePlayerUI();
   showView("gameView");
 
@@ -2048,6 +2076,7 @@ $("profileForm").addEventListener("submit", async event => {
     showScreen("appScreen");
     $("mainNav").classList.remove("hidden");
 
+    extras.onSignedIn();
     updatePlayerUI();
     showView("gameView");
 
@@ -2163,6 +2192,7 @@ supabase.auth.onAuthStateChange((event, session) => {
 
     $("mainNav").classList.add("hidden");
     $("topUser").textContent = "";
+    extras.onSignedOut();
 
     showScreen("tutorialScreen");
     updateStartButton();

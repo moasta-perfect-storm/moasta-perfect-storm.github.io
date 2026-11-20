@@ -215,3 +215,21 @@ More reset snippets are at the bottom of the SQL file.
 - **Full backend included**: `get_my_profile`, `save_profile`, `roll_daily`, `set_task_completion`, `task_templates`, realtime.
 - **Chibi creator** now shows a small picture of every hairstyle, eye style, outfit and accessory instead of text tags.
 - Smaller fixes: token refresh no longer kicks you back to the Game tab; the roll popup can be skipped; the board token no longer jumps early when the leaderboard refreshes; "整理" typo in a task fixed; duplicate-username message.
+
+## Phase 3 (v20): shop sets, mystery boxes, cheers, emotes, recap, special tiles
+
+Run **`supabase-update-phase3-v20.sql`** once in Supabase → SQL Editor (safe to re-run). It needs the v19 SQL first.
+The website files (`phase3.js`, plus small changes in `app.js`, `extras.js`, `index.html`, `style.css`, `game-config.js`) are in this zip.
+Until the SQL is run, each new feature just shows a short "not switched on yet" note.
+
+- **Era sets** (Shop page): 5 sets built from existing shop items. Own every piece → claim a one-off bonus (15% of the set price).
+- **Mystery boxes** (Shop page): Rain 800 / Thunder 1,700 / Perfect Storm 3,200 MP. Always an item you do not own, odds shown on the box, never charged when nothing is left to win.
+- **Cheers** (Friends page): free, 5 a day, one per friend per day, friends only.
+- **Emotes**: pick one on the Friends or Studio page; friends see it next to your name and it can appear in Studio photos.
+- **Studio frames**: Polaroid, Stage lights, Storm, Neon.
+- **Weekly recap** (More → Weekly recap): last 7 Korean days, downloadable as a picture.
+- **Quiz tiles ❓** (11) and **Song of the Day tiles 🎵** (9): shown on the board. Quiz = once per tile, +80 MP right / +10 wrong. Song = stream the song of the day 3 times (KST) for +120 MP.
+  Tile numbers live in `SPECIAL_TILES` (game-config.js) **and** the `special_tiles` table; keep them identical.
+  Change the Song of the Day with `update public.daily_songs set title = '…', song_key = '…' where day = '…';`.
+
+Also included: **`txt-perfect-storm-update-v16.sql`** (new Roll A / Roll B task rules). Run it if you have not yet.

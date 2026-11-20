@@ -12,26 +12,50 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800;900&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="./style.css">
+  <script>try{if(sessionStorage.getItem("psIntroSeen"))document.documentElement.classList.add("intro-seen")}catch(e){}</script>
 </head>
 <body>
   <div class="storm-fx" aria-hidden="true"><div class="clouds"></div><div class="rain far"></div><div class="rain"></div><div class="flash"></div></div>
   <div class="ambient ambient-one"></div><div class="ambient ambient-two"></div>
+  <div id="introOverlay" class="intro-overlay" aria-hidden="true">
+    <div id="introStage" class="intro-stage"></div>
+    <img id="introWordmark" class="intro-wordmark" alt="" hidden>
+    <button id="introSkip" class="intro-skip" type="button">Skip</button>
+  </div>
+  <script>setTimeout(function(){var o=document.getElementById("introOverlay");if(o)o.remove()},15000)</script>
+
   <header class="topbar">
     <a class="brand" href="#" aria-label="TXT Perfect Storm home"><img class="brand-logo" src="./assets/logo.jpg" alt="" height="38" style="max-height:38px;width:auto"> <span>PERFECT STORM</span></a>
-    <nav id="mainNav" class="main-nav hidden">
-      <button class="nav-link active" data-view="gameView">Game</button>
-      <button class="nav-link" data-view="tasksView">Tasklists</button>
-      <button class="nav-link" data-view="leaderboardView">Leaderboard</button>
-      <button class="nav-link" data-view="wardrobeView" id="wardrobeNav">Wardrobe</button>
-      <button class="nav-link" data-view="shopView" id="shopNav">Shop</button>
-      <button class="nav-link" data-view="streamsView" id="streamsNav">My Streams</button>
-      <button class="nav-link" data-view="studioView" id="studioNav" title="Photo stage — download your chibi">📷 Studio</button>
+    <nav id="mainNav" class="main-nav hidden" aria-label="Main">
+      <button class="nav-link active" data-view="gameView"><span class="nav-ico">🎲</span><span class="nav-txt">Game</span></button>
+      <button class="nav-link" data-view="tasksView"><span class="nav-ico">📋</span><span class="nav-txt">Tasks</span></button>
+      <button class="nav-link" data-view="leaderboardView"><span class="nav-ico">🏆</span><span class="nav-txt">Ranking</span></button>
+      <button class="nav-link" data-view="shopView" id="shopNav"><span class="nav-ico">🛍️</span><span class="nav-txt">Shop</span></button>
+      <button class="nav-link" data-view="friendsView" id="friendsNav"><span class="nav-ico">👥</span><span class="nav-txt">Friends</span><i class="nav-dot hidden" id="friendsDot"></i></button>
+      <div class="nav-more">
+        <button class="nav-link" id="moreToggle" type="button" aria-haspopup="true" aria-expanded="false"><span class="nav-ico">☰</span><span class="nav-txt">More</span></button>
+        <div class="more-menu hidden" id="moreMenu" role="menu">
+          <button class="nav-link more-item" data-view="wardrobeView" id="wardrobeNav" role="menuitem"><span class="nav-ico">👗</span><span class="nav-txt">Wardrobe</span></button>
+          <button class="nav-link more-item" data-view="badgesView" id="badgesNav" role="menuitem"><span class="nav-ico">🏅</span><span class="nav-txt">Badges</span></button>
+          <button class="nav-link more-item" data-view="streamsView" id="streamsNav" role="menuitem"><span class="nav-ico">📈</span><span class="nav-txt">My Streams</span></button>
+          <button class="nav-link more-item" data-view="studioView" id="studioNav" role="menuitem" title="Photo stage — download your chibi"><span class="nav-ico">📷</span><span class="nav-txt">Studio</span></button>
+          <button class="nav-link more-item" data-view="recapView" id="recapNav" role="menuitem" title="Your week in TXT streams"><span class="nav-ico">📅</span><span class="nav-txt">Weekly recap</span></button>
+          <div class="more-sep"></div>
+          <button class="more-item more-logout" id="logoutButton" type="button" role="menuitem"><span class="nav-ico">🚪</span><span class="nav-txt">Log out</span></button>
+        </div>
+      </div>
     </nav>
     <div class="top-right">
-      <button id="soundToggle" class="nav-link sound-toggle" type="button" aria-label="Sound on" title="Sound on/off">🔊</button>
+      <button id="mpChip" class="mp-chip hidden" type="button" title="Your moasta points — open the shop">💰 <b id="mpChipValue">0</b></button>
+      <div class="notif-wrap">
+        <button id="notifButton" class="icon-btn hidden" type="button" aria-label="Notifications" aria-expanded="false">🔔<i id="notifCount" class="notif-count hidden">0</i></button>
+        <div id="notifPanel" class="notif-panel hidden" role="dialog" aria-label="Notifications"></div>
+      </div>
+      <button id="soundToggle" class="icon-btn sound-toggle" type="button" aria-label="Sound on" title="Sound on/off">🔊</button>
       <div class="top-user" id="topUser"></div>
     </div>
   </header>
+  <div id="toastStack" class="toast-stack" aria-live="polite"></div>
 
   <main class="page-shell">
     <section id="tutorialScreen" class="welcome-screen panel">
@@ -114,6 +138,7 @@
               <p id="countdown" class="countdown">--:--:--</p>
               <p class="fine-print center">Daily reset: 12:00 AM KST</p>
             </section>
+            <section class="panel chest-card" id="chestCard"><p class="muted">Loading your daily chest…</p></section>
             <section class="panel stats-card">
               <p class="eyebrow">YOUR PROGRESS</p>
               <div class="stat-line"><span>Current tile</span><b id="statPosition">1 / 300</b></div>
@@ -168,6 +193,30 @@
         </div>
       </section>
 
+      <section id="friendsView" class="app-view hidden">
+        <div class="section-heading"><p class="eyebrow">YOUR CREW</p><h1>Friends <span class="sparkle">✦</span></h1><p class="muted">Add other players by username to follow their progress. They have to accept your request first.</p></div>
+        <div class="friends-layout">
+          <section class="panel friends-add">
+            <p class="eyebrow">ADD A FRIEND</p>
+            <form id="friendForm" class="friend-form" autocomplete="off">
+              <input id="friendInput" type="text" maxlength="30" placeholder="Their username" aria-label="Friend's username" autocapitalize="off" spellcheck="false">
+              <button class="primary-button" type="submit">Send request</button>
+            </form>
+            <p id="friendMessage" class="form-message" role="status"></p>
+            <div id="friendRequests"></div>
+          </section>
+          <section class="panel friends-list-panel">
+            <p class="eyebrow">YOUR FRIENDS <span id="friendCount"></span></p>
+            <div id="friendList"><p class="muted">Loading…</p></div>
+          </section>
+        </div>
+      </section>
+
+      <section id="badgesView" class="app-view hidden">
+        <div class="section-heading"><p class="eyebrow">ACHIEVEMENTS</p><h1>Badges <span class="sparkle">✦</span></h1><p class="muted" id="badgesSummary">Earn badges by rolling, finishing tasks, keeping streaks and crossing the boards.</p></div>
+        <div id="badgesGrid" class="badges-grid"></div>
+      </section>
+
       <section id="shopView" class="app-view hidden">
         <div class="section-heading"><p class="eyebrow">MOASTA POINTS</p><h1>Shop <span class="sparkle">✦</span></h1><p class="muted">Spend your MP on hairstyles, outfits, accessories, auras and wings. Every completed task = 50 MP, every checkpoint = +10 MP, finishing board 1 / 2 / 3 = +25 / +50 / +75 MP. Rarer items cost more, so choose wisely!</p></div>
         <section class="panel shop-panel">
@@ -210,6 +259,11 @@
             <p id="studioMessage" class="form-message" role="status"></p>
           </div>
         </section>
+      </section>
+
+      <section id="recapView" class="app-view hidden">
+        <div class="section-heading"><p class="eyebrow">YOUR WEEK</p><h1>Weekly recap <span class="sparkle">✦</span></h1><p class="muted">The last 7 days (Korean time): your streams, favourite songs and tasks. Save it as a picture to share.</p></div>
+        <section class="panel recap-panel"><div id="recapHost"><p class="muted">Loading…</p></div></section>
       </section>
 
       <section id="wardrobeView" class="app-view hidden">
