@@ -270,6 +270,9 @@ function makeToken(p, tileGlobal) {
 
   token.innerHTML = `<img class="chibi-image board-chibi" src="${escapeHtml(avatarDataUri(p.avatar, p.uid))}" alt=""><span class="token-name">${escapeHtml(p.name || "Player")}</span>`;
   token.title = p.name || "Player";
+  token.dataset.uid = p.uid;
+  token.tabIndex = 0;
+  token.setAttribute("role", "button");
   return token;
 }
 
@@ -1558,7 +1561,7 @@ function renderLeaderboard() {
   }
 
   host.innerHTML = sorted.map((p, i) => `
-    <div class="leader-row">
+    <div class="leader-row" data-uid="${escapeHtml(p.uid)}" tabindex="0" role="button" title="View profile">
       <div class="leader-person">
         <span class="leader-rank">${i + 1}</span>
         <img class="chibi-image leader-chibi" src="${escapeHtml(avatarDataUri(p.avatar, p.uid))}" alt="">

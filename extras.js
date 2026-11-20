@@ -9,6 +9,17 @@ import * as phase3 from "./phase3.js";
 const $ = (id) => document.getElementById(id);
 let ctx = null;
 
+// Invite links look like  https://yoursite/?add=username . Remember the name through sign-up/login.
+try {
+  const url = new URL(location.href);
+  const wanted = (url.searchParams.get("add") || "").trim();
+  if (wanted) {
+    sessionStorage.setItem("pendingFriend", wanted.slice(0, 30));
+    url.searchParams.delete("add");
+    history.replaceState(null, "", url.pathname + (url.search || "") + url.hash);
+  }
+} catch { /* ignore */ }
+
 const state = {
   uid: null,
   signedIn: false,
@@ -17,6 +28,7 @@ const state = {
   badges: { defs: [], earned: [], loaded: false },
   lbBadges: {},
   friends: null,
+  sent: new Set(),               // uids we just sent a request to (before the list reloads)
   chest: null,
   chestReward: null,
   doneSet: null,
@@ -94,6 +106,12 @@ export function init(context) {
   $("mpChip")?.addEventListener("click", () => ctx.showView("shopView"));
 
   $("friendForm")?.addEventListener("submit", onAddFriend);
+  $("leaderboardRows")?.addEventListener("click", onLeaderClick);
+  $("board")?.addEventListener("click", onLeaderClick);
+  $("board")?.addEventListener("keydown", (ev) => { if ((ev.key === "Enter" || ev.key === " ") && ev.target.matches(".player-token")) { ev.preventDefault(); onLeaderClick(ev); } });
+  $("boardStart")?.addEventListener("click", onLeaderClick);
+  $("leaderboardRows")?.addEventListener("keydown", (ev) => { if ((ev.key === "Enter" || ev.key === " ") && ev.target.matches(".leader-row, .player-token")) { ev.preventDefault(); onLeaderClick(ev); } });
+  $("friendInvite")?.addEventListener("click", shareInvite);
   $("friendRequests")?.addEventListener("click", onFriendAction);
   $("friendList")?.addEventListener("click", onFriendAction);
   $("chestCard")?.addEventListener("click", (e) => { if (e.target.closest("#chestOpen")) openChest(); });
@@ -108,6 +126,7 @@ export function onSignedIn() {
   state.badges = { defs: [], earned: [], loaded: false };
   state.lbBadges = {};
   state.friends = null;
+  state.sent = new Set();
   state.chest = null;
   state.chestReward = null;
   state.doneSet = null;
@@ -120,7 +139,7 @@ export function onSignedIn() {
   refreshBadges({ quiet: false }).finally(() => { loadLeaderboardBadges(); });
   refreshNotifications({ first: true });
   loadChest({ nudge: true });
-  loadFriends({ quiet: true });
+  loadFriends({ quiet: true }).then(handlePendingInvite);
   phase3.onSignedIn();
 
   clearInterval(state.pollTimer);
@@ -370,7 +389,9 @@ async function loadFriends({ quiet = false } = {}) {
     if (state.friends && incoming > (state.friends.incoming || []).length && quiet) { /* new request: the notification toast covers it */ }
     state.friends = data;
     $("friendsDot")?.classList.toggle("hidden", incoming === 0);
+    state.sent = new Set();
     renderFriends();
+    ctx.renderLeaderboard?.();
   } catch (err) {
     if (!quiet) { const l = $("friendList"); if (l) l.innerHTML = `<p class="muted">${esc(err.message || "Could not load friends.")}</p>`; }
   }
@@ -405,6 +426,105 @@ function renderFriends() {
         f.id)).join("")
     : `<p class="muted">No friends yet. Send a request using a username above.</p>`;
   phase3.decorateFriends();
+}
+
+// ---------- easy adding: tap list, leaderboard buttons, invite links ----------
+function relatedIds() {
+  const d = state.friends || {};
+  const ids = new Set(state.sent);
+  (d.friends || []).forEach((f) => ids.add(f.id));
+  (d.incoming || []).forEach((r) => ids.add(r.uid || r.id));
+  (d.outgoing || []).forEach((r) => ids.add(r.uid || r.id));
+  return ids;
+}
+
+async function sendRequest(name) {
+  const res = await rpc("friend_request", { p_username: name });
+  toast(res.status === "accepted" ? `🤝 You and ${res.username} are now friends!` : `📨 Request sent to ${res.username}`, { kind: "social" });
+  return res;
+}
+
+function friendStatus(uid) {
+  const d = state.friends || {};
+  if (uid === state.uid) return "self";
+  if ((d.friends || []).some((f) => f.id === uid)) return "friend";
+  if (state.sent.has(uid) || (d.outgoing || []).some((r) => (r.uid || r.id) === uid)) return "sent";
+  if ((d.incoming || []).some((r) => (r.uid || r.id) === uid)) return "incoming";
+  return "none";
+}
+
+function closeProfile() { $("playerProfile")?.remove(); }
+
+function onLeaderClick(e) {
+  const row = e.target.closest(".leader-row[data-uid], .player-token[data-uid]"); if (!row || !state.signedIn) return;
+  const p = (window.latestPlayers || []).find((x) => x.uid === row.dataset.uid);
+  if (p) openProfile(p);
+}
+
+function openProfile(p) {
+  closeProfile();
+  const byId = new Map(state.badges.defs.map((d) => [d.id, d]));
+  const badges = (state.lbBadges?.[p.uid] || []).map((id) => byId.get(id)).filter(Boolean);
+  const el = document.createElement("div");
+  el.id = "playerProfile"; el.className = "profile-backdrop";
+  el.innerHTML = `<div class="profile-card" role="dialog" aria-modal="true" aria-label="${esc(p.name)}'s profile">
+    <button class="profile-close" type="button" aria-label="Close">✕</button>
+    <img class="chibi-image profile-chibi" src="${esc(ctx.avatarDataUri(p.avatar, p.uid))}" alt="">
+    <h2 class="profile-name">${esc(p.name || "Player")}${p.uid === state.uid ? " (you)" : ""}</h2>
+    <div class="profile-stats">
+      <div><b>${esc(p.position ?? 1)}</b><span>Tile</span></div>
+      <div><b>${esc((p.mp ?? 0).toLocaleString())}</b><span>MP</span></div>
+      <div><b>${p.highestMilestone > 1 ? esc(p.highestMilestone) : "–"}</b><span>Checkpoint</span></div>
+    </div>
+    ${badges.length ? `<p class="profile-badges">${badges.map((d) => `<span title="${esc(d.name)}">${esc(d.emoji)}</span>`).join("")}</p>` : ""}
+    <div class="profile-action"></div></div>`;
+  document.body.appendChild(el);
+  el.addEventListener("click", (ev) => { if (ev.target === el || ev.target.closest(".profile-close")) closeProfile(); });
+
+  const box = el.querySelector(".profile-action");
+  const status = friendStatus(p.uid);
+  if (status === "self") { box.innerHTML = `<p class="muted">This is you!</p>`; return; }
+  if (status === "friend") { box.innerHTML = `<p class="muted">🤝 You are friends</p>`; return; }
+  if (status === "sent") { box.innerHTML = `<p class="muted">📨 Request sent. Waiting for them.</p>`; return; }
+  const btn = document.createElement("button");
+  btn.className = "primary-button"; btn.type = "button";
+  btn.textContent = status === "incoming" ? "Accept friend request" : "＋ Add friend";
+  box.appendChild(btn);
+  btn.addEventListener("click", async () => {
+    btn.disabled = true;
+    try {
+      const res = await sendRequest(p.name);
+      box.innerHTML = `<p class="muted">${res.status === "accepted" ? "🤝 You are friends now!" : "📨 Request sent!"}</p>`;
+      state.sent.add(p.uid);
+      loadFriends({ quiet: true });
+    } catch (err) {
+      btn.disabled = false;
+      toast(err.message || "Could not send the request.");
+    }
+  });
+}
+
+async function shareInvite() {
+  const me = ctx.getPlayer()?.name; if (!me) return;
+  const url = `${location.origin}${location.pathname}?add=${encodeURIComponent(me)}`;
+  const text = `Add me on Beat The Angel Bite! My username is ${me}.`;
+  try {
+    if (navigator.share) { await navigator.share({ title: "Beat The Angel Bite", text, url }); return; }
+  } catch (err) { if (err?.name === "AbortError") return; }
+  try {
+    await navigator.clipboard.writeText(url);
+    toast("🔗 Invite link copied! Send it to your friends.", { kind: "social" });
+  } catch {
+    window.prompt("Copy your invite link:", url);
+  }
+}
+
+async function handlePendingInvite() {
+  let name = "";
+  try { name = sessionStorage.getItem("pendingFriend") || ""; sessionStorage.removeItem("pendingFriend"); } catch { /* ignore */ }
+  if (!name || name.toLowerCase() === String(ctx.getPlayer()?.name || "").toLowerCase()) return;
+  try { await sendRequest(name); loadFriends({ quiet: true }); }
+  catch (err) { toast(err.message || `Could not add ${name}.`); }
 }
 
 async function onAddFriend(e) {
