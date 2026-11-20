@@ -1033,3 +1033,5 @@ img,svg{max-width:100%}
 .profile-action .primary-button{width:100%}
 
 .player-token[data-uid]{cursor:pointer}
+.profile-error{color:#ffc2d4;margin:10px 0 0;font-size:13px}
+.toast-stack{z-index:400}

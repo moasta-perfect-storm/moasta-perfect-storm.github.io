@@ -499,7 +499,10 @@ function openProfile(p) {
       loadFriends({ quiet: true });
     } catch (err) {
       btn.disabled = false;
-      toast(err.message || "Could not send the request.");
+      const m = document.createElement("p");
+      m.className = "muted profile-error";
+      m.textContent = err.message || "Could not send the request.";
+      box.appendChild(m);
     }
   });
 }
