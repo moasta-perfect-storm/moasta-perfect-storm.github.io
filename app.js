@@ -21,6 +21,7 @@ let currentUser = null;
 let player = null;
 let playersChannel = null;
 let leaderboardSubscriptionPromise = null;
+let teamByPlayerId = new Map();
 let authTransitionId = 0;
 let portalAnimation = null;
 let selectedAvatarState = {
@@ -261,6 +262,12 @@ function boardOrder() {
   return order;
 }
 
+function teamBadgeHtml(team) {
+  if (team !== "angel" && team !== "storm") return "";
+  const label = team === "angel" ? "Team Angel" : "Team Storm";
+  return `<img class="team-name-badge ${team}" src="./assets/team-${team}-badge.png" alt="${label}" title="${label}" loading="lazy">`;
+}
+
 function makeToken(p, tileGlobal) {
   const token = document.createElement("span");
   const isCurrentPlayer = p.uid === currentUser?.id;
@@ -270,7 +277,7 @@ function makeToken(p, tileGlobal) {
     token.classList.add(portalAnimation.className);
   }
 
-  token.innerHTML = `<img class="chibi-image board-chibi" src="${escapeHtml(avatarDataUri(p.avatar, p.uid))}" alt=""><span class="token-name">${escapeHtml(p.name || "Player")}</span>`;
+  token.innerHTML = `<img class="chibi-image board-chibi" src="${escapeHtml(avatarDataUri(p.avatar, p.uid))}" alt=""><span class="token-name">${escapeHtml(p.name || "Player")}${teamBadgeHtml(p.team)}</span>`;
   token.title = p.name || "Player";
   token.dataset.uid = p.uid;
   token.tabIndex = 0;
@@ -393,7 +400,7 @@ function updatePlayerUI() {
 
   $("profileChip").innerHTML = `
     <img class="chibi-image profile-chibi" src="${escapeHtml(avatarDataUri(player.avatar, player.uid))}" alt="">
-    <span>${escapeHtml(player.name)}</span>${badgeHtml(player.position)}
+    <span>${escapeHtml(player.name)}${teamBadgeHtml(player.team)}</span>${badgeHtml(player.position)}
   `;
 
   $("currentPosition").textContent = player.position ?? 1;
@@ -1568,7 +1575,7 @@ function renderLeaderboard() {
         <span class="leader-rank">${i + 1}</span>
         <img class="chibi-image leader-chibi" src="${escapeHtml(avatarDataUri(p.avatar, p.uid))}" alt="">
         <span class="leader-name">
-          ${escapeHtml(p.name || "Player")}${p.uid === currentUser?.id ? " (you)" : ""}${badgeHtml(p.position)}${extras.badgeIcons(p.uid)}
+          ${escapeHtml(p.name || "Player")}${teamBadgeHtml(p.team)}${p.uid === currentUser?.id ? " (you)" : ""}${badgeHtml(p.position)}${extras.badgeIcons(p.uid)}
         </span>
       </div>
       <span class="leader-milestone">
@@ -1586,6 +1593,7 @@ function convertPlayer(data) {
   return {
     uid: data.id,
     name: data.username,
+    team: teamByPlayerId.get(data.id) || null,
     avatar: data.avatar,
     position: data.position,
     highestMilestone: data.highest_milestone,
@@ -1622,7 +1630,20 @@ async function loadLeaderboard() {
     return;
   }
 
+  // Team assignments are fetched separately so every member gets a badge,
+  // not only the limited top-ten list returned by the Team Battle page.
+  const { data: teamRows, error: teamError } = await supabase.rpc("get_player_team_badges");
+  if (teamError) {
+    console.warn("Team badges unavailable (run the v37 migration):", teamError.message);
+    teamByPlayerId = new Map();
+  } else {
+    teamByPlayerId = new Map((teamRows || []).map(row => [row.player_id, row.team]));
+  }
   window.latestPlayers = data.map(convertPlayer);
+  if (player) {
+    player.team = teamByPlayerId.get(player.uid) || null;
+    updatePlayerUI();
+  }
   renderBoard();
   renderLeaderboard();
 }

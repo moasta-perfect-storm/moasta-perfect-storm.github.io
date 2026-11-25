@@ -10,6 +10,9 @@ const CHEER = ["Let's go Angels! 🪽", "Keep streaming, we've got this! 💪", 
 const TAUNT = ["Nice try, see you on top 😏", "Storm clouds are coming ⛈️", "Angels, hold my halo 😇", "Friendly game, serious streams 🎧"];
 const RANKS = [[1500, "💎 Diamond Streamer"], [500, "🥇 Gold Streamer"], [100, "🥈 Silver Streamer"], [0, "🥉 Bronze Streamer"]];
 const TIER = { tier_bronze: "🥉 Bronze", tier_silver: "🥈 Silver", tier_gold: "🥇 Gold" };
+const teamBadge = (team) => team === "angel" || team === "storm"
+  ? `<img class="team-name-badge ${team}" src="./assets/team-${team}-badge.png" alt="${NAME[team]}" title="${NAME[team]}" loading="lazy">`
+  : "";
 let ctx = {};
 let teamPages = { angel: 0, storm: 0 };
 const TEAM_PAGE_SIZE = 10;
@@ -110,7 +113,7 @@ function renderTeamLists(host, d) {
       <div class="leader-row${p.uid === uid ? " me" : ""}">
         <span class="leader-rank">${p.rank}</span>
         <img class="chibi-image leader-chibi" src="${esc(avatarUri(p.avatar, p.uid))}" alt="">
-        <span class="leader-name">${esc(p.name)}${p.uid === uid ? " (you)" : ""}</span>
+        <span class="leader-name">${esc(p.name)}${teamBadge(p.team)}${p.uid === uid ? " (you)" : ""}</span>
         <span>${fmt(p.streams)} · ${p.share}%</span>
       </div>`).join("");
     const start = players.length ? page * TEAM_PAGE_SIZE + 1 : 0;
