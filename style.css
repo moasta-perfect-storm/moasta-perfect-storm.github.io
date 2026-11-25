@@ -1090,3 +1090,30 @@ img,svg{max-width:100%}
 .chest-tile.tier-rare{border-color:#8fd3ff;box-shadow:inset 0 0 0 1px rgba(143,211,255,.35)}
 .chest-tile.tier-epic{border-color:#ffd1ea;box-shadow:0 0 14px rgba(243,183,216,.35)}
 .chest-tile.tier-epic .ct-pull{color:#ffd1ea}
+
+/* Team Battle */
+.team-bar{display:flex;height:16px;border-radius:99px;overflow:hidden;margin:10px 0}
+.team-fill-angel{background:#F3A9CC}.team-fill-storm{background:#6C7CFF}
+.team-heads,.team-cols{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin:10px 0}
+.team-card{padding:12px;border-radius:14px;background:rgba(255,255,255,.08)}
+.team-card.team-angel{border:2px solid #F3A9CC}.team-card.team-storm{border:2px solid #6C7CFF}
+.team-me{margin:10px 0}.team-cols .leader-row{display:flex;gap:8px;align-items:center}
+.team-cols .leader-row.me{outline:2px solid #D7FF3A;border-radius:10px}
+@media (max-width:640px){.team-heads,.team-cols{grid-template-columns:1fr}}
+
+/* Team Battle v32 */
+.team-power{background:linear-gradient(90deg,#FFD84A,#FF8A3A);color:#2b1a00;font-weight:700;text-align:center}
+.team-list{list-style:none;margin:6px 0 0;padding:0;display:grid;gap:4px}
+.team-ev.angel{color:#F3A9CC}.team-ev.storm{color:#9AA6FF}
+.team-pill{display:inline-block;padding:3px 10px;margin:2px;border-radius:99px;background:rgba(255,255,255,.1);font-size:13px}
+.team-pill.angel{border:1px solid #F3A9CC}.team-pill.storm{border:1px solid #6C7CFF}
+.team-goal{display:grid;grid-template-columns:1fr 90px auto;gap:8px;align-items:center;margin:6px 0;font-size:13px}
+.team-gbar{height:8px;border-radius:99px;background:rgba(255,255,255,.12);overflow:hidden}.team-gbar i{display:block;height:100%;background:#D7FF3A}
+.team-flag{margin-left:6px;background:none;border:0;color:inherit;opacity:.45;cursor:pointer}.team-flag:hover{opacity:1}
+.team-post{display:flex;gap:6px;flex-wrap:wrap;align-items:center;margin-bottom:8px}.team-post select{max-width:100%}
+.team-cardgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(100px,1fr));gap:8px}
+.team-tcard{display:flex;flex-direction:column;align-items:center;text-align:center;padding:8px;border-radius:12px;background:rgba(255,255,255,.08);border:2px solid #888}
+.team-tcard span{font-size:28px}.team-tcard small{opacity:.7}
+.team-tcard.rare{border-color:#6CB6FF}.team-tcard.epic{border-color:#C77DFF}.team-tcard.legendary{border-color:#FFD84A;box-shadow:0 0 12px #FFD84A88}
+.team-tcard.locked{opacity:.45;border-style:dashed}
+@media (max-width:640px){.team-goal{grid-template-columns:1fr}}
