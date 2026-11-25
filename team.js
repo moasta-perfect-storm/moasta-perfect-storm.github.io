@@ -11,9 +11,12 @@ const TAUNT = ["Nice try, see you on top 😏", "Storm clouds are coming ⛈️"
 const RANKS = [[1500, "💎 Diamond Streamer"], [500, "🥇 Gold Streamer"], [100, "🥈 Silver Streamer"], [0, "🥉 Bronze Streamer"]];
 const TIER = { tier_bronze: "🥉 Bronze", tier_silver: "🥈 Silver", tier_gold: "🥇 Gold" };
 let ctx = {};
+let teamPages = { angel: 0, storm: 0 };
+const TEAM_PAGE_SIZE = 10;
 
 export async function showTeam({ avatarUri, uid }) {
   ctx = { avatarUri, uid };
+  teamPages = { angel: 0, storm: 0 };
   const host = $("teamBody");
   if (!host) return;
   host.innerHTML = `<p class="muted">Loading the battle…</p>`;
@@ -23,6 +26,7 @@ export async function showTeam({ avatarUri, uid }) {
     if (error) throw error;
     if (!d?.season) { host.innerHTML = `<p class="muted">No season yet. Check back soon!</p>`; return; }
     host.innerHTML = render(d);
+    renderTeamLists(host, d);
     wire(host, d);
     supabase.rpc("get_team_cards").then(({ data }) => data && cards(host, data));
     supabase.rpc("get_team_hof").then(({ data }) => data?.length && hof(host, data));
@@ -39,13 +43,8 @@ function render(d) {
   const head = (k, t) => `<div class="team-card team-${k}"><h3>${NAME[k]}</h3>
     <b>${fmt(t.total)}</b> pts · ${fmt(t.streams)} streams<br>
     <span class="muted">${t.avg ?? 0} per active member · ${fmt(t.active)}/${fmt(t.members)} active · +${fmt(t.today)} today${t.mult > 1 ? ` · catch-up ×${t.mult}` : ""}</span></div>`;
-  const col = (k) => `<div class="team-col"><h3>${NAME[k]}</h3>${(d.top || []).filter(p => p.team === k).map(p => `
-    <div class="leader-row${p.uid === uid ? " me" : ""}">
-      <span class="leader-rank">${p.rank}</span>
-      <img class="chibi-image leader-chibi" src="${esc(avatarUri(p.avatar, p.uid))}" alt="">
-      <span class="leader-name">${esc(p.name)}${p.uid === uid ? " (you)" : ""}</span>
-      <span>${fmt(p.streams)} · ${p.share}%</span>
-      ${p.uid === uid ? "" : `<button class="team-flag" data-report="${esc(p.uid)}" title="Report something odd">⚑</button>`}</div>`).join("") || `<p class="muted">No players yet.</p>`}</div>`;
+  const col = (k) => `<div class="team-col"><h3>${NAME[k]}</h3>
+    <div class="team-member-list" id="teamMembers-${k}"></div></div>`;
 
   const rank = RANKS.find(r => (d.lifetime || 0) >= r[0])[1];
   const mine = me ? `<div class="panel team-me ${me.team}">You're on <b>${NAME[me.team]}</b> — ${fmt(me.streams)} streams, ${me.share}% of your team (rank ${me.rank}).
@@ -97,6 +96,38 @@ function render(d) {
     <p class="muted">Fair play: scores come from the listening data you link. Winner = higher average per active member; one player above 25% of a team counts half above that (with 4+ active). Team rewards need ${s.min_streams}+ streams. Teams are locked for the season. See something odd? Tap ⚑ next to a name.</p>`;
 }
 
+function renderTeamLists(host, d) {
+  const { avatarUri, uid } = ctx;
+  for (const team of ["angel", "storm"]) {
+    const el = host.querySelector(`#teamMembers-${team}`);
+    if (!el) continue;
+    const players = (d.top || []).filter(p => p.team === team);
+    const pages = Math.max(1, Math.ceil(players.length / TEAM_PAGE_SIZE));
+    const page = Math.min(teamPages[team] || 0, pages - 1);
+    teamPages[team] = page;
+    const visible = players.slice(page * TEAM_PAGE_SIZE, (page + 1) * TEAM_PAGE_SIZE);
+    const rows = visible.map(p => `
+      <div class="leader-row${p.uid === uid ? " me" : ""}">
+        <span class="leader-rank">${p.rank}</span>
+        <img class="chibi-image leader-chibi" src="${esc(avatarUri(p.avatar, p.uid))}" alt="">
+        <span class="leader-name">${esc(p.name)}${p.uid === uid ? " (you)" : ""}</span>
+        <span>${fmt(p.streams)} · ${p.share}%</span>
+        ${p.uid === uid ? "" : `<button class="team-flag" data-report="${esc(p.uid)}" title="Report something odd" aria-label="Report ${esc(p.name)}">⚑</button>`}
+      </div>`).join("");
+    const start = players.length ? page * TEAM_PAGE_SIZE + 1 : 0;
+    const end = Math.min((page + 1) * TEAM_PAGE_SIZE, players.length);
+    el.innerHTML = `${rows || `<p class="muted">No players yet.</p>`}
+      <div class="team-pagination">
+        <span class="muted">${start}–${end} of ${players.length} players</span>
+        <div class="team-page-controls">
+          <button type="button" class="team-page-btn" data-team-page="${team}" data-page="${page - 1}" ${page === 0 ? "disabled" : ""}>← Prev</button>
+          <span class="team-page-number">${page + 1} / ${pages}</span>
+          <button type="button" class="team-page-btn" data-team-page="${team}" data-page="${page + 1}" ${page >= pages - 1 ? "disabled" : ""}>Next →</button>
+        </div>
+      </div>`;
+  }
+}
+
 function wire(host, d) {
   const kind = $("tbKind"), msg = $("tbMsg");
   if (kind) kind.onchange = () => { msg.innerHTML = (kind.value === "cheer" ? CHEER : TAUNT).map((t, i) => `<option value="${i + 1}">${esc(t)}</option>`).join(""); };
@@ -107,6 +138,12 @@ function wire(host, d) {
     if (error) { $("tbNote").textContent = error.message; send.disabled = false; return; }
     showTeam(ctx);
   };
+  host.querySelectorAll("[data-team-page]").forEach((b) => b.onclick = () => {
+    const team = b.dataset.teamPage;
+    teamPages[team] = Number(b.dataset.page);
+    renderTeamLists(host, d);
+    wire(host, d);
+  });
   host.querySelectorAll("[data-report]").forEach((b) => b.onclick = async () => {
     const note = window.prompt("What looks odd? (optional, max 140 characters)", "");
     if (note === null) return;
