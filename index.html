@@ -30,6 +30,7 @@
       <button class="nav-link active" data-view="gameView"><span class="nav-ico">🎲</span><span class="nav-txt">Game</span></button>
       <button class="nav-link" data-view="tasksView"><span class="nav-ico">📋</span><span class="nav-txt">Tasks</span></button>
       <button class="nav-link" data-view="leaderboardView"><span class="nav-ico">🏆</span><span class="nav-txt">Leaderboard</span></button>
+      <button class="nav-link" data-view="teamView" id="teamNav"><span class="nav-ico">⚔️</span><span class="nav-txt">Team</span></button>
       <button class="nav-link" data-view="streamsView" id="streamsNav"><span class="nav-ico">📈</span><span class="nav-txt">My Streams</span></button>
       <div class="nav-more">
         <button class="nav-link" id="moreToggle" type="button" aria-haspopup="true" aria-expanded="false"><span class="nav-ico">☰</span><span class="nav-txt">More</span><i class="nav-dot hidden" id="moreDot"></i></button>
@@ -238,6 +239,11 @@
           <div id="shopGrid" class="shop-grid"></div>
           <p id="shopMessage" class="form-message" role="status"></p>
         </section>
+      </section>
+
+      <section id="teamView" class="app-view hidden">
+        <div class="section-heading"><p class="eyebrow">ANGEL VS STORM</p><h1>Team Battle</h1></div>
+        <div id="teamBody"><p class="muted">Loading…</p></div>
       </section>
 
       <section id="streamsView" class="app-view hidden">

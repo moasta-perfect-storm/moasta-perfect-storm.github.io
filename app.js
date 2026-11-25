@@ -8,6 +8,7 @@ import {
   INTRO_LOGOS, INTRO_WORDMARK, INTRO_TEXT, INTRO_FALLBACK_LOGO
 } from "./game-config.js";
 import * as extras from "./extras.js";
+import { showTeam } from "./team.js";
 import { playIntro } from "./intro.js";
 
 // Intro: the logos slide in and form "TXT" (see game-config.js to change the logos)
@@ -156,6 +157,7 @@ function showView(viewId) {
   if (viewId === "shopView") renderShop();
   if (viewId === "studioView") renderStudio();
   if (viewId === "streamsView") loadMyStreams();
+  if (viewId === "teamView") showTeam({ avatarUri: avatarDataUri, uid: currentUser?.id });
 
   if (viewId === "tasksView") {
     loadSongHistory();
