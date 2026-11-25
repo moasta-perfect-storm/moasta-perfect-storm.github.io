@@ -1143,3 +1143,25 @@ img,svg{max-width:100%}
   #teamView .team-goal{grid-template-columns:1fr}
   #teamView .team-goal>span:last-child{text-align:left}
 }
+/* Team Battle: cheer / taunt form in the site's style */
+#teamView .team-post{gap:10px;margin-bottom:12px}
+#teamView .team-post select{
+  appearance:none;-webkit-appearance:none;
+  border:1px solid rgba(255,220,239,.3);border-radius:999px;
+  background:rgba(255,255,255,.08) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' fill='none' stroke='%23f3b7d8' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E") no-repeat right 14px center;
+  color:var(--white);font:inherit;font-size:13px;font-weight:800;
+  padding:10px 38px 10px 16px;cursor:pointer;min-width:0;
+}
+#teamView .team-post select:hover{background-color:rgba(244,185,216,.18)}
+#teamView .team-post select:focus-visible,#teamView #tbSend:focus-visible{outline:2px solid var(--lav);outline-offset:2px}
+#teamView .team-post select option{background:var(--night2);color:var(--white)}
+#teamView #tbSend{
+  border:0;border-radius:999px;padding:10px 20px;
+  background:linear-gradient(135deg,var(--pink),var(--lav));color:#241a3d;
+  font:inherit;font-size:13px;font-weight:900;cursor:pointer;
+  transition:transform .15s,filter .15s;
+}
+#teamView #tbSend:hover:not(:disabled){transform:translateY(-1px);filter:brightness(1.06)}
+#teamView #tbSend:disabled{opacity:.5;cursor:default}
+#teamView #tbNote{flex-basis:100%}
+@media (max-width:640px){#teamView .team-post select{flex:1 1 100%}#teamView #tbSend{flex:1 1 100%}}
