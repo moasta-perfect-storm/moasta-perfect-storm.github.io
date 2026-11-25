@@ -1133,3 +1133,13 @@ img,svg{max-width:100%}
 #teamView .team-cols .leader-rank{width:18px;text-align:center;flex:0 0 auto}
 #teamView .team-pagination{padding:10px 0 0}
 @media (max-width:640px){#teamView .team-col{border-radius:18px;padding:12px}}
+/* Team Battle: panels need their own padding/spacing (bare .panel has none) */
+#teamView .panel{padding:16px 20px;margin:12px 0}
+#teamView .panel>h3{margin:0 0 10px}
+#teamView .team-goal{grid-template-columns:minmax(0,1fr) 120px 84px}
+#teamView .team-goal>span:last-child{text-align:right}
+@media (max-width:640px){
+  #teamView .panel{padding:14px 14px}
+  #teamView .team-goal{grid-template-columns:1fr}
+  #teamView .team-goal>span:last-child{text-align:left}
+}
