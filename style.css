@@ -1126,3 +1126,10 @@ img,svg{max-width:100%}
 #teamView .team-page-number{font-size:12px;color:var(--muted)}
 #teamView .team-member-list{min-width:0}
 #teamView .team-cols .leader-name{flex:1;min-width:0;overflow-wrap:anywhere}
+/* Team Battle: member columns get the same panel look as the other sections */
+#teamView .team-col{background:var(--panel);border:1px solid var(--line);border-radius:24px;box-shadow:var(--shadow);backdrop-filter:blur(5px);padding:14px 16px;min-width:0}
+#teamView .team-col>h3{margin:0 0 6px}
+#teamView .team-cols .leader-row{padding:8px 4px}
+#teamView .team-cols .leader-rank{width:18px;text-align:center;flex:0 0 auto}
+#teamView .team-pagination{padding:10px 0 0}
+@media (max-width:640px){#teamView .team-col{border-radius:18px;padding:12px}}
