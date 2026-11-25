@@ -93,7 +93,7 @@ function render(d) {
     ${champs ? `<div class="panel"><h3>Season champions</h3>${champs}</div>` : ""}
     ${troph ? `<div class="panel"><h3>Your trophy shelf</h3>${troph}</div>` : ""}
     <div id="teamCards"></div><div id="teamHof"></div>
-    <p class="muted">Fair play: scores come from the listening data you link. Winner = higher average per active member; one player above 25% of a team counts half above that (with 4+ active). Team rewards need ${s.min_streams}+ streams. Teams are locked for the season. See something odd? Tap ⚑ next to a name.</p>`;
+    <p class="muted">Fair play: scores come from the listening data you link. Winner = higher average per active member; one player above 25% of a team counts half above that (with 4+ active). Team rewards need ${s.min_streams}+ streams. Teams are locked for the season.</p>`;
 }
 
 function renderTeamLists(host, d) {
@@ -112,7 +112,6 @@ function renderTeamLists(host, d) {
         <img class="chibi-image leader-chibi" src="${esc(avatarUri(p.avatar, p.uid))}" alt="">
         <span class="leader-name">${esc(p.name)}${p.uid === uid ? " (you)" : ""}</span>
         <span>${fmt(p.streams)} · ${p.share}%</span>
-        ${p.uid === uid ? "" : `<button class="team-flag" data-report="${esc(p.uid)}" title="Report something odd" aria-label="Report ${esc(p.name)}">⚑</button>`}
       </div>`).join("");
     const start = players.length ? page * TEAM_PAGE_SIZE + 1 : 0;
     const end = Math.min((page + 1) * TEAM_PAGE_SIZE, players.length);
@@ -143,14 +142,6 @@ function wire(host, d) {
     teamPages[team] = Number(b.dataset.page);
     renderTeamLists(host, d);
     wire(host, d);
-  });
-  host.querySelectorAll("[data-report]").forEach((b) => b.onclick = async () => {
-    const note = window.prompt("What looks odd? (optional, max 140 characters)", "");
-    if (note === null) return;
-    const { error } = await supabase.rpc("team_report", { p_target: b.dataset.report, p_note: note });
-    b.textContent = error ? "!" : "✓";
-    b.title = error ? error.message : "Thanks, the admin will look at it.";
-    if (error) window.alert(error.message);
   });
 }
 
